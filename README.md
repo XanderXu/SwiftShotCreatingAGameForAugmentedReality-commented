@@ -1,12 +1,14 @@
-注释工作进行中...
-
 # SwiftShot: Creating a Game for Augmented Reality
 
 See how Apple built the featured demo for WWDC18, and get tips for making your own multiplayer games using ARKit, SceneKit, and Swift.
 
-## Overview
+学习苹果如何构建WWDC18的特色demo,并学习如何让你的多人游戏使用ARKit,SceneKit和Swift.
+
+## Overview 综述
 
 SwiftShot is an AR game for two to six players, featured in the [WWDC18 keynote][00]. Use this sample code project to experience it on your own device, see how it works, and build your own customized version of the game.
+
+SwiftShot是在 [WWDC18 keynote][00]上发布的AR游戏,适用于2~6人.可以在你自己的设备上体会这个示例代码,看看它是如何工作的,还可以在此基础上自定义开发自己的游戏.
 
 [00]:https://developer.apple.com/wwdc/
 
@@ -14,27 +16,45 @@ SwiftShot is an AR game for two to six players, featured in the [WWDC18 keynote]
 
 Tap the Host button to start a game for other nearby players, or the Join button to participate in a game started on another device. If you're hosting, the app asks you to find a flat surface (like a table) to place the game board on: Drag, rotate, and pinch to position and resize the board, then tap when you're ready to play, and the game board appears.
 
+点击Host按钮开始游戏,以便附近玩家加入,或者点击Join按钮加入一个别人开始的游戏.如果你是主机(hosting),那app会要求你找到一个平整的表面(如桌子)以放置游戏沙盘:用拖拽,旋转和缩放来定位和设置底座尺寸和位置,然后点击屏幕,游戏沙盘就出现了.
+
 When the game board appears, you'll find a landscape of wooden blocks on the table, with three slingshots at each end. Move your device near a slingshot and touch the screen to grab it, then pull back and release to aim and fire the ball. Hit blocks with balls to knock them out of the way, and knock down all three of the other team's slingshots to win.
 
-## Getting Started
+当游戏沙盘出现后,你会看到桌面上有木头块,两端各有三个弹弓.移动设备靠近弹弓,点击屏幕来抓起它,向后拉,瞄准然后松手发射.小球撞到中间的木块,会把它们撞开,把对方三个弹弓架都打翻,就是胜利了.
+
+## Getting Started 开始
 
 Requires Xcode 10.0, iOS 12.0 and an iOS device with an A9 or later processor. ARKit is not supported in iOS Simulator.
 
-## Designing Gameplay for AR
+要求Xcode 10.0,iOS 12.0,使用A9及更新处理器的iOS设备.ARKit不支持模拟器.
+
+## Designing Gameplay for AR 设计AR游戏性
 
 SwiftShot embraces augmented reality as a medium for engaging gameplay.
 
+SwiftShot使用了增强现实作为媒介,增加了游戏性.
+
 **Encourage player movement to make gameplay more immersive.** In SwiftShot, you may find that you can't get a good shot at an enemy slingshot because blocks are in the way. And you may find a structure of blocks that can't be easily knocked down from one angle. But you can move to other slingshots and work with your teammates to find the best angle for a winning play. 
+
+**鼓励玩家移动来使游戏性更强.**在SwiftShot中,你可能会发现有些木块挡住了你射击敌人的路线.也可能有些木块从当前角度难以打倒.这时你可以和你的同伴一起换到另一个弹弓架处,找到最佳获胜角度.
 
 **Don't encourage *too much* movement.** You have to aim carefully to fire a good shot, so you're less likely to bump into your teammates and send your device flying across the room.
 
+**不鼓励过多的移动.**你必须认真瞄准,准确射击,这样就不会撞到你的同伴,把设备撞飞出去.
+
 **Foster social engagement.** Multiplayer AR games bring players together in the same space, giving them exciting new ways to have fun together. Using AR to watch a game as a spectator provides a different perspective and a new experience.
+
+**促进社交参与.**多人AR游戏将多个玩家聚焦到同一个地方,并提供了一起开心玩乐的新方式.以旁观者的视角用AR来观看一场游戏,会有不同的视点和新的体验.
 
 **Keep games short, but add fun through variation.** Getting up and waving your device around at arm's length can make for exciting gameplay, but it can also be tiring. SwiftShot keeps matches short, encouraging party-style gameplay where players can drop into and out of games often. But SwiftShot also provides several game board layouts and special effects so that each game can be different.
 
-## Using Local Multipeer Networking and Sharing World Maps
+**游戏要短,但是要有变化以增加乐趣.**开始游戏,在一臂之长的距离内挥动设备是很好玩的,但是也会非常累.SwiftShot让每场比赛都很短,鼓励聚会形式的游戏,让玩家可以经常进入和退出游戏.同时SwiftShot也提供了一些不同的游戏沙盘布局和特殊效果,这样每次的游戏都会略有不同.
+
+## Using Local Multipeer Networking and Sharing World Maps 使用本地多点网络及共享世界地图
 
 SwiftShot uses the [MultipeerConnectivity][30] framework to establish a connection with other local players and send gameplay data between devices. When you start your own session, the player who starts the session creates an [`ARWorldMap`][31] containing ARKit's spatial understanding of the area around the game board. Other players joining the session receive a copy of the map and see a photo of the host's view of the table. Moving their device so they see a similar perspective helps ARKit process the received map and establish a shared frame of reference for the multiplayer game. 
+
+
 
 For more details on setting up multiplayer AR sessions, see [Creating a Multiuser AR Experience][32]. For details on how this app implements Multipeer Connectivity, see the  [`GameBrowser`](x-source-tag://GameBrowser-MCNearbyServiceBrowserDelegate) and [`GameSession`](x-source-tag://GameSession-MCSessionDelegate) classes.
 
