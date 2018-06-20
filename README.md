@@ -36,19 +36,19 @@ SwiftShot使用了增强现实作为媒介,增加了游戏性.
 
 **Encourage player movement to make gameplay more immersive.** In SwiftShot, you may find that you can't get a good shot at an enemy slingshot because blocks are in the way. And you may find a structure of blocks that can't be easily knocked down from one angle. But you can move to other slingshots and work with your teammates to find the best angle for a winning play. 
 
-**鼓励玩家移动来使游戏性更强.**在SwiftShot中,你可能会发现有些木块挡住了你射击敌人的路线.也可能有些木块从当前角度难以打倒.这时你可以和你的同伴一起换到另一个弹弓架处,找到最佳获胜角度.
+**鼓励玩家移动来使游戏性更强.** 在SwiftShot中,你可能会发现有些木块挡住了你射击敌人的路线.也可能有些木块从当前角度难以打倒.这时你可以和你的同伴一起换到另一个弹弓架处,找到最佳获胜角度.
 
 **Don't encourage *too much* movement.** You have to aim carefully to fire a good shot, so you're less likely to bump into your teammates and send your device flying across the room.
 
-**不鼓励过多的移动.**你必须认真瞄准,准确射击,这样就不会撞到你的同伴,把设备撞飞出去.
+**不鼓励过多的移动.** 你必须认真瞄准,准确射击,这样就不会撞到你的同伴,把设备撞飞出去.
 
 **Foster social engagement.** Multiplayer AR games bring players together in the same space, giving them exciting new ways to have fun together. Using AR to watch a game as a spectator provides a different perspective and a new experience.
 
-**促进社交参与.**多人AR游戏将多个玩家聚焦到同一个地方,并提供了一起开心玩乐的新方式.以旁观者的视角用AR来观看一场游戏,会有不同的视点和新的体验.
+**促进社交参与.** 多人AR游戏将多个玩家聚焦到同一个地方,并提供了一起开心玩乐的新方式.以旁观者的视角用AR来观看一场游戏,会有不同的视点和新的体验.
 
 **Keep games short, but add fun through variation.** Getting up and waving your device around at arm's length can make for exciting gameplay, but it can also be tiring. SwiftShot keeps matches short, encouraging party-style gameplay where players can drop into and out of games often. But SwiftShot also provides several game board layouts and special effects so that each game can be different.
 
-**游戏要短,但是要有变化以增加乐趣.**开始游戏,在一臂之长的距离内挥动设备是很好玩的,但是也会非常累.SwiftShot让每场比赛都很短,鼓励聚会形式的游戏,让玩家可以经常进入和退出游戏.同时SwiftShot也提供了一些不同的游戏沙盘布局和特殊效果,这样每次的游戏都会略有不同.
+**游戏要短,但是要有变化以增加乐趣.** 开始游戏,在一臂之长的距离内挥动设备是很好玩的,但是也会非常累.SwiftShot让每场比赛都很短,鼓励聚会形式的游戏,让玩家可以经常进入和退出游戏.同时SwiftShot也提供了一些不同的游戏沙盘布局和特殊效果,这样每次的游戏都会略有不同.
 
 ## Using Local Multipeer Networking and Sharing World Maps 使用本地多点网络及共享世界地图
 
@@ -110,11 +110,11 @@ SwiftShot使用了两种技术来解决这些问题:
 
 **Each peer in a session runs its own local physics simulation, but synchronizes physics results.** To ensure that gameplay-relevant physics results are consistent for all peers, the game designates the player who started the game as the source of truth. The peer in that "server" role continually sends physics state information to all other peers, who update their local physics simulations accordingly. The physics server doesn't encode and transmit the entire state of the SceneKit physics simulation, however—it sends updates only for bodies that are relevant to gameplay and whose state has changed since the last update. For implementation details, see the [`PhysicsSyncSceneData`](x-source-tag://PhysicsSyncSceneData) class in the sample code.
 
-**session中的每一个peer运行自己的本地物理模拟,但同步物理效果的结果.**为了保证游戏性相关的物理结果对所有peer都是一致的,游戏设计了开启游戏的玩家作为真相源(the source of truth).承担"server"角色的peer持续改善物理状态信息给所有其他peer,他们则相应更新本地物理模拟.这个物理服务器并没有编码或传输SceneKit物理模拟的完整状态,而只是更新那些和游戏性相关的物体,以及上次更新后状态改变的物体.要了解实现细节,见示例代码中的 [`PhysicsSyncSceneData`](x-source-tag://PhysicsSyncSceneData) 类.
+**session中的每一个peer运行自己的本地物理模拟,但同步物理效果的结果.** 为了保证游戏性相关的物理结果对所有peer都是一致的,游戏设计了开启游戏的玩家作为真相源(the source of truth).承担"server"角色的peer持续改善物理状态信息给所有其他peer,他们则相应更新本地物理模拟.这个物理服务器并没有编码或传输SceneKit物理模拟的完整状态,而只是更新那些和游戏性相关的物体,以及上次更新后状态改变的物体.要了解实现细节,见示例代码中的 [`PhysicsSyncSceneData`](x-source-tag://PhysicsSyncSceneData) 类.
 
 **Domain-specific data compression minimizes the bandwidth cost of physics synchronization.** To transmit physics state information, the server encodes only the minimal information needed for accurate synchronization: position, orientation, velocity, and angular velocity, as well as a Boolean flag indicating whether the body should be treated as in motion or at rest. To send this information efficiently between devices, the [`PhysicsNodeData`](x-source-tag://PhysicsNodeData) and [`PhysicsPoolNodeData`](x-source-tag://PhysicsPoolNodeData) types encode it to a minimal binary representation. For example:
 
-**特定域的数据压缩,最小化了物理同步的带宽占用.**为了传输物理状态信息,服务器只编码了精确同步所需的最少信息:位置,朝向速度和角速度,同时还有一个布尔值来表示物体应该被作为运动物体还是静置物体对待.为了在设备之间高效地发送信息, [`PhysicsNodeData`](x-source-tag://PhysicsNodeData) 和 [`PhysicsPoolNodeData`](x-source-tag://PhysicsPoolNodeData) 类型将它编码成最小二进制表示法.例如:
+**特定域的数据压缩,最小化了物理同步的带宽占用.** 为了传输物理状态信息,服务器只编码了精确同步所需的最少信息:位置,朝向速度和角速度,同时还有一个布尔值来表示物体应该被作为运动物体还是静置物体对待.为了在设备之间高效地发送信息, [`PhysicsNodeData`](x-source-tag://PhysicsNodeData) 和 [`PhysicsPoolNodeData`](x-source-tag://PhysicsPoolNodeData) 类型将它编码成最小二进制表示法.例如:
 
 - Position is a three-component vector of 32-bit float values (96 bits total), but the game is constrained to a space 80 units wide, tall, and deep. Applying this constraint provides for encoding position in only 48 bits (16 bits per component).
 
