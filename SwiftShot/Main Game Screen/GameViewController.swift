@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Main view controller for the AR game.
+AR游戏的主控制器.
 */
 
 import UIKit
@@ -163,6 +164,7 @@ class GameViewController: UIViewController {
     }
 
     // used when state is localizingToWorldMap or localizingToSavedMap
+    // 当状态是localizingToWorldMap 或 localizingToSavedMap 时使用.
     var targetWorldMap: ARWorldMap?
 
     var gameBoard = GameBoard()
@@ -187,6 +189,7 @@ class GameViewController: UIViewController {
     }
 
     // Proximity manager for beacons
+    // beacon的接近管理器
     let proximityManager = ProximityManager.shared
 
     var canAdjustBoard: Bool {
@@ -209,6 +212,7 @@ class GameViewController: UIViewController {
         // hierarchy of the scene, so it isn't affected by changes to the scene scale.
         // On each frame update, however, its position is explicitly set to a transformed
         // value that is consistent with the game objects in the scene.
+        // 
         sceneView.audioListener = audioListenerNode
 
         sceneView.scene.rootNode.addChildNode(gameBoard)
@@ -238,6 +242,7 @@ class GameViewController: UIViewController {
                                                object: nil)
         
         // this preloads the assets used by the level - materials and texture and compiles shaders
+        // 预加载素材根据等级来加载--材质和纹理,和着色器编译
         preloadLevel()
     }
 
