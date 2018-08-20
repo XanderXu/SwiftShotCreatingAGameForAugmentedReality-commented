@@ -8,8 +8,7 @@ Entity class for game objects with customizable components.
 import Foundation
 import SceneKit
 import GameplayKit
-
-private let log = Log()
+import os.log
 
 struct CollisionMask: OptionSet {
     let rawValue: Int
@@ -19,8 +18,14 @@ struct CollisionMask: OptionSet {
     static let ball = CollisionMask(rawValue: 4)
     static let phantom = CollisionMask(rawValue: 32)    // for detecting collisions with trigger volumes
     static let triggerVolume = CollisionMask(rawValue: 64)  // trigger behavior without affecting physics
-    static let catapultBlue = CollisionMask(rawValue: 128)
-    static let catapultYellow = CollisionMask(rawValue: 256)
+    static let catapultTeamA = CollisionMask(rawValue: 128)
+    static let catapultTeamB = CollisionMask(rawValue: 256)
+}
+
+extension GKEntity {
+    func components<P>(conformingTo: P.Type) -> [P] {
+        return components.compactMap { $0 as? P }
+    }
 }
 
 class GameObject: GKEntity {
@@ -33,6 +38,8 @@ class GameObject: GKEntity {
     var usePredefinedPhysics = false
     var isBlockObject = true
     var density: Float = 0.0
+    var isAlive: Bool
+    var isServer: Bool
 
     static var indexCounter = 0
     var index = 0
@@ -42,10 +49,11 @@ class GameObject: GKEntity {
     static func resetIndexCounter() {
         indexCounter = 0
     }
-    
+
     // init with index that can be used to replace an old node
-    init(node: SCNNode, index: Int?, gamedefs: [String: Any]) {
+    init(node: SCNNode, index: Int?, gamedefs: [String: Any], alive: Bool, server: Bool) {
         objectRootNode = node
+        self.isAlive = alive
         
         if let index = index {
             self.index = index
@@ -59,7 +67,8 @@ class GameObject: GKEntity {
         } else {
             geometryNode = nil
         }
-        
+
+        self.isServer = server
         super.init()
 
         if let physNode = node.findNodeWithPhysicsBody(),
@@ -73,14 +82,6 @@ class GameObject: GKEntity {
         if let def = node.name {
             initGameComponents(gamedefs: gamedefs, def: def)
         }
-    }
-    
-    convenience init(node: SCNNode) {
-        self.init(node: node, index: nil, gamedefs: [String: Any]())
-    }
-    
-    convenience init(node: SCNNode, gamedefs: [String: Any]) {
-        self.init(node: node, index: nil, gamedefs: gamedefs)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -223,11 +224,11 @@ class GameObject: GKEntity {
             case "density":
                 updateDensity(value: value)
             default:
-                log.warn("Unknown component \(key)")
+                os_log(.info, "Unknown component %s", key)
             }
         }
     }
-    
+
     // help correct for hitches if needed
     func setupSmoothPhysics(value: Any) {
         if let doSmooth = value as? Bool, doSmooth, let geom = geometryNode, let phys = physicsNode {
@@ -264,7 +265,7 @@ class GameObject: GKEntity {
         guard let resetSwitch = value as? Bool,
             resetSwitch,
             let leverObj = objectRootNode.childNode(withName: "resetSwitch_lever", recursively: true) else {
-                log.error("Missing resetSwitchOnLever")
+                os_log(.error, "Missing resetSwitchOnLever")
                 return
         }
         addComponent(ResetSwitchComponent(entity: self, lever: leverObj))
@@ -281,6 +282,11 @@ class GameObject: GKEntity {
     }
 
     func setupWaypoints(value: Any) {
+        // only do animation waypoints on the server; clients will get
+        // their motion updates via physics sync
+        guard isServer else {
+            return
+        }
         if let properties = value as? [String: Any] {
             let animComponent = AnimWaypointComponent(node: objectRootNode, properties: properties)
             if animComponent.hasWaypoints {
@@ -337,7 +343,7 @@ class GameObject: GKEntity {
                     gameDefs = dictionary
                 }
             } catch {
-                log.error("Error!! Unable to parse \(file).json with \(error)")
+                os_log(.error, "Error!! Unable to parse %s.json with %s", file, "\(error)")
             }
         }
         
@@ -373,5 +379,37 @@ class GameObject: GKEntity {
         }
         
         return result
+    }
+
+    // MARK: - Runtime methods
+    func disable() {
+        isAlive = false
+        physicsNode?.removeAllParticleSystems()
+        objectRootNode.removeFromParentNode()
+        removeComponent(ofType: RemoveWhenFallenComponent.self)
+    }
+
+    func apply(physicsData nodeData: PhysicsNodeData, isHalfway: Bool) {
+        guard let node = physicsNode else { return }
+        // if we're not alive, avoid applying physics updates.
+        // this will allow objects on clients to get culled properly
+        guard isAlive else { return }
+        if isHalfway {
+            node.simdWorldPosition = (nodeData.position + node.simdWorldPosition) * 0.5
+            node.simdOrientation = simd_slerp(node.simdOrientation, nodeData.orientation, 0.5)
+        } else {
+            node.simdWorldPosition = nodeData.position
+            node.simdOrientation = nodeData.orientation
+        }
+
+        if let physicsBody = node.physicsBody {
+            physicsBody.resetTransform()
+            physicsBody.simdVelocity = nodeData.velocity
+            physicsBody.simdAngularVelocity = nodeData.angularVelocity
+        }
+    }
+
+    func generatePhysicsData() -> PhysicsNodeData? {
+        return physicsNode.map { PhysicsNodeData(node: $0, alive: isAlive) }
     }
 }

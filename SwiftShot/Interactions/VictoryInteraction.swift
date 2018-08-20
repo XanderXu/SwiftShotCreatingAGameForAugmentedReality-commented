@@ -12,7 +12,7 @@ class VictoryInteraction: Interaction {
     weak var delegate: InteractionDelegate?
     private(set) var displayedVictory = false
     private(set) var gameDone = false
-    private var teamWon: TeamID = .none
+    private var teamWon: Team = .none
     
     private var victoryNode: SCNNode
     private var activationStartTime: TimeInterval = 0.0
@@ -36,7 +36,7 @@ class VictoryInteraction: Interaction {
         delegate.addNodeToLevel(victoryNode)
         victoryNode.simdWorldPosition = float3(0.0, 15.0, 0.0)
         
-        victoryNode.simdEulerAngles.y = teamWon == .blue ? .pi : 0.0 // Rotate Victory to face in the right direction
+        victoryNode.simdEulerAngles.y = teamWon == .teamA ? .pi : 0.0 // Rotate Victory to face in the right direction
         for child in victoryNode.childNodes {
             child.physicsBody?.resetTransform()
         }
@@ -44,7 +44,7 @@ class VictoryInteraction: Interaction {
         activationStartTime = GameTime.time
         
         // Set color to that of winning team
-        victoryNode.setPaintColors(teamID: teamWon)
+        victoryNode.setPaintColors(team: teamWon)
         
         delegate.playWinSound()
     }
@@ -67,9 +67,9 @@ class VictoryInteraction: Interaction {
             }
         }
     }
-    
-    func handleTouch(type: TouchType, hitInfo: GameRayCastHitInfo) {
-        
+
+    func handleTouch(_ type: TouchType, camera: Ray) {
+
     }
     
     private func didWin() -> Bool {
@@ -78,16 +78,16 @@ class VictoryInteraction: Interaction {
         
         var teamToCatapultCount = [0, 0, 0]
         for catapult in catapults where !catapult.disabled {
-            teamToCatapultCount[catapult.teamID.rawValue] += 1
+            teamToCatapultCount[catapult.team.rawValue] += 1
         }
         
         gameDone = true
         if teamToCatapultCount[1] == 0 && teamToCatapultCount[2] == 0 {
             teamWon = .none
         } else if teamToCatapultCount[1] == 0 {
-            teamWon = .yellow
+            teamWon = .teamB
         } else if teamToCatapultCount[2] == 0 {
-            teamWon = .blue
+            teamWon = .teamA
         } else {
             gameDone = false
         }

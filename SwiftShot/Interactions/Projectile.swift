@@ -8,7 +8,7 @@ Custom projectile selection.
 import Foundation
 import SceneKit
 
-enum ProjectileType: Int, Codable {
+enum ProjectileType: UInt32, CaseIterable {
     case none = 0
     case cannonball
     case chicken
@@ -31,8 +31,7 @@ protocol ProjectileDelegate: class {
 
 class Projectile: GameObject {
     var physicsBody: SCNPhysicsBody?
-    var isAlive = false
-    var team: TeamID = .none {
+    var team: Team = .none {
         didSet {
             // we assume the geometry and lod are unique to geometry and lod here
             geometryNode?.geometry?.firstMaterial?.diffuse.contents = team.color
@@ -55,21 +54,6 @@ class Projectile: GameObject {
     private let fadeTimeToLifeTimeRatio = 0.1
     private var fadeStartTime: TimeInterval { return lifeTime * (1.0 - fadeTimeToLifeTimeRatio) }
 
-    init(radius: CGFloat) {
-        let ballShape = SCNSphere(radius: radius)
-        ballShape.materials = [SCNMaterial(diffuse: UIColor.white)]
-        let node = SCNNode(geometry: ballShape)
-        let physicsShape = SCNPhysicsShape(node: node, options: nil)
-        let physicsBody = SCNPhysicsBody(type: SCNPhysicsBodyType.dynamic, shape: physicsShape)
-        physicsBody.contactTestBitMask = CollisionMask([.rigidBody, .glitterObject, .triggerVolume]).rawValue
-        physicsBody.categoryBitMask = CollisionMask([.ball, .rigidBody, .phantom]).rawValue
-        node.physicsBody = physicsBody
-        
-        super.init(node: node, index: nil, gamedefs: [String: Any]())
-        self.physicsNode = node
-        self.physicsBody = physicsBody
-    }
-
     init(prototypeNode: SCNNode, index: Int?, gamedefs: [String: Any]) {
         let node = prototypeNode.clone()
         // geometry and materials are reference types, so here we
@@ -82,13 +66,13 @@ class Projectile: GameObject {
         }
         
         physicsBody.contactTestBitMask = CollisionMask([.rigidBody, .glitterObject, .triggerVolume]).rawValue
-        physicsBody.categoryBitMask = CollisionMask([.ball, .rigidBody, .phantom]).rawValue
+        physicsBody.categoryBitMask = CollisionMask([.ball]).rawValue
         
-        super.init(node: node, index: index, gamedefs: gamedefs)
+        super.init(node: node, index: index, gamedefs: gamedefs, alive: false, server: false)
         self.physicsNode = physicsNode
         self.physicsBody = physicsBody
     }
-    
+
     convenience init(prototypeNode: SCNNode) {
         self.init(prototypeNode: prototypeNode, index: nil, gamedefs: [String: Any]())
     }
@@ -96,7 +80,7 @@ class Projectile: GameObject {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     func launch(velocity: GameVelocity, lifeTime: TimeInterval, delegate: ProjectileDelegate) {
         startTime = GameTime.time
         isLaunched = true
@@ -109,10 +93,10 @@ class Projectile: GameObject {
             physicsBody.simdVelocityFactor = float3(1.0, 1.0, 1.0)
             physicsBody.simdAngularVelocityFactor = float3(1.0, 1.0, 1.0)
             physicsBody.simdVelocity = velocity.vector
-            
             physicsNode.name = "ball"
             physicsNode.simdWorldPosition = velocity.origin
             physicsBody.resetTransform()
+            physicsBody.continuousCollisionDetectionThreshold = 0.001
         } else {
             fatalError("Projectile not setup")
         }
@@ -128,7 +112,8 @@ class Projectile: GameObject {
 
     }
 
-    func update() {
+    override func update(deltaTime: TimeInterval) {
+        super.update(deltaTime: deltaTime)
         // Projectile should fade and disappear after a while
         if age > lifeTime {
             objectRootNode.opacity = 1.0
@@ -142,7 +127,12 @@ class Projectile: GameObject {
         guard let delegate = delegate else { fatalError("No Delegate") }
         delegate.despawnProjectile(self)
     }
-    
+
+    override func generatePhysicsData() -> PhysicsNodeData? {
+        guard var data = super.generatePhysicsData() else { return nil }
+        data.team = team
+        return data
+    }
 }
 
 // Chicken example of how we make a new projectile type

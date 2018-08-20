@@ -8,14 +8,13 @@ Tunes SceneKit lighting/shadows using the entity definitions file.
 import Foundation
 import simd
 import SceneKit
+import os.log
 
 struct GameLightProps {
     var shadowMapSize = float2(2048, 4096)
     var angles = float3(-90, 0, 0)
     var shadowMode: Int = 0
 }
-
-private let log = Log()
 
 class GameLight {
     private var props = GameLightProps()
@@ -68,7 +67,7 @@ class GameLight {
             light.shadowSampleCount = 1
             
         default:
-            log.error("unknown shadow mode")
+            os_log(.error, "unknown shadow mode")
         }
         
         // when true, this reduces acne, but is causing shadow to separate

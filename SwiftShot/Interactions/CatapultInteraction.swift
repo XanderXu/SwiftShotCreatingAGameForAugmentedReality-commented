@@ -54,11 +54,11 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
         
         let projectile = TrailBallProjectile(prototypeNode: dummyBall.clone())
         projectile.isAlive = true
-        projectile.team = catapult.teamID
+        projectile.team = catapult.team
         
         guard let physicsNode = projectile.physicsNode else { fatalError("Projectile has no physicsNode") }
         physicsNode.physicsBody = nil
-        delegate.addCatapultPhysicsIgnoreNodeToLevel(physicsNode, catapultID: catapult.catapultID)
+        delegate.addNodeToLevel(physicsNode)
 
         catapult.setProjectileType(projectileType: projectileType, projectile: projectile.objectRootNode)
     }
@@ -91,8 +91,6 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
         
         // Empty grabbedCatapult if this catapult was grabbed by player
         if let grabbedCatapult = grabInteraction.grabbedGrabbable as? Catapult, grabbedCatapult.catapultID == catapultID {
-            guard let delegate = delegate else { fatalError("No delegate") }
-            delegate.stopIgnoringPhysicsOnCatapult()
             grabInteraction.grabbedGrabbable = nil
         }
     }
@@ -119,14 +117,7 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
     }
     
     func onGrabStart(grabbable: Grabbable, cameraInfo: CameraInfo, player: Player) {
-        guard let delegate = delegate else { fatalError("No Delegate") }
         guard let catapult = grabbable as? Catapult else { return }
-        
-        // If this isn't server, we should ignore the physics data from the server for this player's catapult,
-        // and use the information calculated on this player's device instead (to prevent lag)
-        if !delegate.isServer {
-            delegate.ignorePhysicsOnCatapult(catapult.catapultID)
-        }
         
         catapult.onGrabStart()
     }
@@ -153,11 +144,6 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
     func onServerGrab(grabbable: Grabbable, cameraInfo: CameraInfo, player: Player) {
         guard let catapult = grabbable as? Catapult else { return }
         catapult.serverGrab(cameraRay: cameraInfo.ray)
-        
-        // the player has committed to a side
-        if player.teamID == .none {
-            player.teamID = catapult.teamID
-        }
     }
     
     func onUpdateGrabStatus(grabbable: Grabbable, cameraInfo: CameraInfo) {
@@ -180,7 +166,7 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
                 guard let physicsBody = node.physicsBody else { fatalError("Catapult has no physicsBody") }
                 
                 // Do not let projectile from the same team kill the catapult
-                if catapult.teamID == projectile.team {
+                if catapult.team == projectile.team {
                     physicsBody.simdVelocity = float3()
                     physicsBody.simdAngularVelocity = float4(0.0, 1.0, 0.0, 0.0)
                 }
@@ -202,7 +188,7 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
     func slingBall(catapult: Catapult, velocity: GameVelocity) {
         guard let delegate = delegate else { fatalError("No delegate") }
         let newProjectile = delegate.spawnProjectile()
-        newProjectile.team = catapult.teamID
+        newProjectile.team = catapult.team
         
         delegate.addNodeToLevel(newProjectile.objectRootNode)
         
@@ -216,16 +202,18 @@ class CatapultInteraction: Interaction, GrabInteractionDelegate {
         // assign the catapult source to this ball
         if let physicsNode = newProjectile.physicsNode, let physBody = physicsNode.physicsBody {
             physicsNode.setValue(catapult.catapultID, forKey: "Source")
-            physBody.collisionBitMask = CollisionMask([.rigidBody, .glitterObject, .ball]).rawValue
-            if catapult.teamID == .blue {
-                physBody.collisionBitMask |= CollisionMask.catapultYellow.rawValue
+            physBody.collisionBitMask = CollisionMask([.rigidBody, .glitterObject]).rawValue
+            if catapult.team == .teamA {
+                physBody.collisionBitMask |= CollisionMask.catapultTeamB.rawValue
+                physBody.categoryBitMask |= CollisionMask.catapultTeamA.rawValue
             } else {
-                physBody.collisionBitMask |= CollisionMask.catapultBlue.rawValue
+                physBody.collisionBitMask |= CollisionMask.catapultTeamA.rawValue
+                physBody.categoryBitMask |= CollisionMask.catapultTeamB.rawValue
             }
         }
     }
-    
-    func handleTouch(type: TouchType, hitInfo: GameRayCastHitInfo) {
+
+    func handleTouch(_ type: TouchType, camera: Ray) {
         
     }
 }

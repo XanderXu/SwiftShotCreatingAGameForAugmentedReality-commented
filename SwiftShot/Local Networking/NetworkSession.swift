@@ -10,17 +10,14 @@ import MultipeerConnectivity
 import simd
 import os.signpost
 
-private let log = Log()
-private let locationKey = "LocationAttributeName"
-
-protocol GameSessionDelegate: class {
-    func gameSession(_ session: GameSession, received command: GameCommand)
-    func gameSession(_ session: GameSession, joining player: Player)
-    func gameSession(_ session: GameSession, leaving player: Player)
+protocol NetworkSessionDelegate: class {
+    func networkSession(_ session: NetworkSession, received command: GameCommand)
+    func networkSession(_ session: NetworkSession, joining player: Player)
+    func networkSession(_ session: NetworkSession, leaving player: Player)
 }
 
-/// - Tag: GameSession
-class GameSession: NSObject {
+/// - Tag: NetworkSession
+class NetworkSession: NSObject {
 
     let myself: Player
     private var peers: Set<Player> = []
@@ -29,8 +26,9 @@ class GameSession: NSObject {
     let session: MCSession
     var location: GameTableLocation?
     let host: Player
+    let appIdentifier: String
 
-    weak var delegate: GameSessionDelegate?
+    weak var delegate: NetworkSessionDelegate?
 
     private var serviceAdvertiser: MCNearbyServiceAdvertiser?
 
@@ -43,11 +41,14 @@ class GameSession: NSObject {
 
     init(myself: Player, asServer: Bool, location: GameTableLocation?, host: Player) {
         self.myself = myself
-        let encryptionPreference: MCEncryptionPreference = UserDefaults.standard.useEncryption ? .required : .none
-        self.session = MCSession(peer: myself.peerID, securityIdentity: nil, encryptionPreference: encryptionPreference)
+        self.session = MCSession(peer: myself.peerID, securityIdentity: nil, encryptionPreference: .required)
         self.isServer = asServer
         self.location = location
         self.host = host
+        // if the appIdentifier is missing from the main bundle, that's
+        // a significant build error and we should crash.
+        self.appIdentifier = Bundle.main.appIdentifier!
+        os_log("my appIdentifier is %s", self.appIdentifier)
         super.init()
         self.session.delegate = self
     }
@@ -55,12 +56,11 @@ class GameSession: NSObject {
     // for use when acting as game server
     func startAdvertising() {
         guard serviceAdvertiser == nil else { return } // already advertising
-        
-        let discoveryInfo: [String: String]?
+
+        os_log(.info, "ADVERTISING %@", myself.peerID)
+        var discoveryInfo: [String: String] = [SwiftShotGameAttribute.appIdentifier: appIdentifier]
         if let location = location {
-            discoveryInfo = [locationKey: String(location.identifier)]
-        } else {
-            discoveryInfo = nil
+            discoveryInfo[SwiftShotGameAttribute.location] = String(location.identifier)
         }
         let advertiser = MCNearbyServiceAdvertiser(peer: myself.peerID,
                                                    discoveryInfo: discoveryInfo,
@@ -71,7 +71,7 @@ class GameSession: NSObject {
     }
 
     func stopAdvertising() {
-        log.info("stop advertising")
+        os_log(.info, "stop advertising")
         serviceAdvertiser?.stopAdvertisingPeer()
         serviceAdvertiser = nil
     }
@@ -91,15 +91,15 @@ class GameSession: NSObject {
             let peerIds = peers.map { $0.peerID }
             try session.send(data, toPeers: peerIds, with: .reliable)
             if action.description != "physics" {
-                 os_signpost(type: .event, log: .network_data_sent, name: .network_action_sent, signpostID: .network_data_sent,
+                 os_signpost(.event, log: .network_data_sent, name: .network_action_sent, signpostID: .network_data_sent,
                              "Action : %s", action.description)
             } else {
                 let bytes = Int32(exactly: data.count) ?? Int32.max
-                os_signpost(type: .event, log: .network_data_sent, name: .network_physics_sent, signpostID: .network_data_sent,
+                os_signpost(.event, log: .network_data_sent, name: .network_physics_sent, signpostID: .network_data_sent,
                             "%d Bytes Sent", bytes)
             }
         } catch {
-            log.error("sending failed: \(error)")
+            os_log(.error, "sending failed: %s", "\(error)")
         }
     }
 
@@ -114,15 +114,15 @@ class GameSession: NSObject {
                 try sendSmall(data: data, to: player.peerID)
             }
             if action.description != "physics" {
-                os_signpost(type: .event, log: .network_data_sent, name: .network_action_sent, signpostID: .network_data_sent,
+                os_signpost(.event, log: .network_data_sent, name: .network_action_sent, signpostID: .network_data_sent,
                             "Action : %s", action.description)
             } else {
                 let bytes = Int32(exactly: data.count) ?? Int32.max
-                os_signpost(type: .event, log: .network_data_sent, name: .network_physics_sent, signpostID: .network_data_sent,
+                os_signpost(.event, log: .network_data_sent, name: .network_physics_sent, signpostID: .network_data_sent,
                             "%d Bytes Sent", bytes)
             }
         } catch {
-            log.error("sending failed: \(error)")
+            os_log(.error, "sending failed: %s", "\(error)")
         }
     }
 
@@ -135,57 +135,57 @@ class GameSession: NSObject {
         try data.write(to: fileName)
         session.sendResource(at: fileName, withName: "Action", toPeer: peer) { error in
             if let error = error {
-                log.error("sending failed: \(error)")
+                os_log(.error, "sending failed: %s", "\(error)")
                 return
             }
-            log.info("send succeeded, removing temp file")
+            os_log(.info, "send succeeded, removing temp file")
             do {
                 try FileManager.default.removeItem(at: fileName)
             } catch {
-                log.error("removing failed: \(error)")
+                os_log(.error, "removing failed: %s", "\(error)")
             }
         }
     }
 
     func receive(data: Data, from peerID: MCPeerID) {
         guard let player = peers.first(where: { $0.peerID == peerID }) else {
-            log.info("peer \(peerID) unknown!")
+            os_log(.info, "peer %@ unknown!", peerID)
             return
         }
         do {
             var bits = ReadableBitStream(data: data)
             let action = try Action(from: &bits)
             let command = GameCommand(player: player, action: action)
-            delegate?.gameSession(self, received: command)
+            delegate?.networkSession(self, received: command)
             if action.description != "physics" {
-                os_signpost(type: .event, log: .network_data_received, name: .network_action_received, signpostID: .network_data_received,
+                os_signpost(.event, log: .network_data_received, name: .network_action_received, signpostID: .network_data_received,
                             "Action : %s", action.description)
             } else {
                 let peerID = Int32(truncatingIfNeeded: peerID.displayName.hashValue)
                 let bytes = Int32(exactly: data.count) ?? Int32.max
-                os_signpost(type: .event, log: .network_data_received, name: .network_physics_received, signpostID: .network_data_received,
+                os_signpost(.event, log: .network_data_received, name: .network_physics_received, signpostID: .network_data_received,
                             "%d Bytes Sent from %d", bytes, peerID)
             }
         } catch {
-            log.error("deserialization error: \(error)")
+            os_log(.error, "deserialization error: %s", "\(error)")
         }
     }
 }
 
-/// - Tag: GameSession-MCSessionDelegate
-extension GameSession: MCSessionDelegate {
+/// - Tag: NetworkSession-MCSessionDelegate
+extension NetworkSession: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        log.info("peer \(peerID) state is now \(state.rawValue)")
+        os_log(.info, "peer %@ state is now %d", peerID, state.rawValue)
         let player = Player(peerID: peerID)
         switch state {
         case .connected:
             peers.insert(player)
-            delegate?.gameSession(self, joining: player)
+            delegate?.networkSession(self, joining: player)
         case .connecting:
             break
         case.notConnected:
             peers.remove(player)
-            delegate?.gameSession(self, leaving: player)
+            delegate?.networkSession(self, leaving: player)
         }
     }
 
@@ -194,22 +194,22 @@ extension GameSession: MCSessionDelegate {
     }
 
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {
-        log.info("peer \(peerID) sent a stream named \(streamName)")
+        os_log(.info, "peer %@ sent a stream named %s", peerID, streamName)
     }
 
     func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {
-        log.info("peer \(peerID) started sending a resource named \(resourceName)")
+        os_log(.info, "peer %@ started sending a resource named %s", peerID, resourceName)
     }
 
     func session(_ session: MCSession,
                  didFinishReceivingResourceWithName resourceName: String,
                  fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {
-        log.info("peer \(peerID) finished sending a resource named \(resourceName)")
+        os_log(.info, "peer %@ finished sending a resource named %s", peerID, resourceName)
         if let error = error {
-            log.error("failed to receive resource: \(error)")
+            os_log(.error, "failed to receive resource: %s", "\(error)")
             return
         }
-        guard let url = localURL else { log.error("what what no url?"); return }
+        guard let url = localURL else { os_log(.error, "what what no url?"); return }
 
         do {
             // .mappedIfSafe makes the initializer attempt to map the file directly into memory
@@ -220,17 +220,17 @@ extension GameSession: MCSessionDelegate {
             // removing the file is done by the session, so long as we're done with it before the
             // delegate method returns.
         } catch {
-            log.error("dealing with resource failed: \(error)")
+            os_log(.error, "dealing with resource failed: %s", "\(error)")
         }
     }
 }
 
-extension GameSession: MCNearbyServiceAdvertiserDelegate {
+extension NetworkSession: MCNearbyServiceAdvertiserDelegate {
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser,
                     didReceiveInvitationFromPeer peerID: MCPeerID,
                     withContext context: Data?,
                     invitationHandler: @escaping (Bool, MCSession?) -> Void) {
-        log.info("got request from \(peerID), accepting!")
+        os_log(.info, "got request from %@, accepting!", peerID)
         invitationHandler(true, session)
     }
 }

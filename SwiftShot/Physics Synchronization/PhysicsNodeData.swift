@@ -9,8 +9,6 @@ import Foundation
 import simd
 import SceneKit
 
-private let log = Log()
-
 private let positionCompressor = FloatCompressor(minValue: -80.0, maxValue: 80.0, bits: 16)
 private let orientationCompressor: FloatCompressor = {
     let range: Float = 1.0 / sqrt(2)
@@ -30,7 +28,9 @@ private let orientationDeltaToConsiderNotMoving: Float = 0.002
 
 /// - Tag: PhysicsNodeData
 struct PhysicsNodeData: CustomStringConvertible {
+    var isAlive = true
     var isMoving = false
+    var team = Team.none
     var position = float3()
     var orientation = simd_quatf()
     var velocity = float3()
@@ -44,8 +44,9 @@ struct PhysicsNodeData: CustomStringConvertible {
 }
 
 extension PhysicsNodeData {
-    init(node: SCNNode) {
-        isMoving = false
+    init(node: SCNNode, alive: Bool, team: Team = .none) {
+        isAlive = alive
+        self.team = team
         let newPosition = node.presentation.simdWorldPosition
         let newOrientation = node.presentation.simdOrientation
 
@@ -70,16 +71,19 @@ extension PhysicsNodeData {
 
 extension PhysicsNodeData: BitStreamCodable {
     func encode(to bitStream: inout WritableBitStream) {
+        bitStream.appendBool(isAlive)
+        if !isAlive { return }
         bitStream.appendBool(isMoving)
+        team.encode(to: &bitStream)
 
         // Position
         positionCompressor.write(position, to: &bitStream)
 
         // Orientation: send 2 bits specifying the max component, send 3 compressed float for the 3 smallest components
         var vector = orientation.vector
-        var maxComponent = fabs(vector[0]) > fabs(vector[1]) ? 0 : 1
-        maxComponent = fabs(vector[2]) > fabs(vector[maxComponent]) ? 2 : maxComponent
-        maxComponent = fabs(vector[3]) > fabs(vector[maxComponent]) ? 3 : maxComponent
+        var maxComponent = abs(vector[0]) > abs(vector[1]) ? 0 : 1
+        maxComponent = abs(vector[2]) > abs(vector[maxComponent]) ? 2 : maxComponent
+        maxComponent = abs(vector[3]) > abs(vector[maxComponent]) ? 3 : maxComponent
         bitStream.appendUInt32(UInt32(maxComponent), numberOfBits: 2)
 
         // flip the quaternion sign if the max component is negative, this is to avoid having to send over another
@@ -113,8 +117,10 @@ extension PhysicsNodeData: BitStreamCodable {
     }
 
     init(from bitStream: inout ReadableBitStream) throws {
+        isAlive = try bitStream.readBool()
+        if !isAlive { return }
         isMoving = try bitStream.readBool()
-
+        team = try Team(from: &bitStream)
         // Position
         position = try positionCompressor.readFloat3(from: &bitStream)
 

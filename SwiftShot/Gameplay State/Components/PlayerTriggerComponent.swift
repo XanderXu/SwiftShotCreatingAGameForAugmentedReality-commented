@@ -7,8 +7,7 @@ Handles destruction of slingshots when hit by other team's shots.
 
 import Foundation
 import GameplayKit
-
-private let log = Log()
+import os.log
 
 class PlayerTriggerComponent: GKComponent, CollisionHandlerComponent {
     let catapult: SCNNode
@@ -32,7 +31,7 @@ class PlayerTriggerComponent: GKComponent, CollisionHandlerComponent {
            sourceIndex != catIndex { // don't allow to shoot self
             if let physicsNode = otherNode.findNodeWithPhysicsBody(), let physicsBody = physicsNode.physicsBody {
                 let vel = physicsBody.simdVelocity
-                log.debug("hit vel: \(vel.x) \(vel.y) \(vel.z)")
+                os_log(.debug, "hit vel: %f %f %f", vel.x, vel.y, vel.z)
                 let hitInfo = HitCatapult(catapultID: catIndex, justKnockedout: true, vortex: false)
                 manager.queueAction(gameAction: .catapultKnockOut(hitInfo)) // tell myself
                 manager.send(gameAction: .catapultKnockOut(hitInfo)) // tell everyone else

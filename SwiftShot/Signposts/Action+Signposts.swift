@@ -22,8 +22,6 @@ extension Action: CustomStringConvertible {
                 return "grabMove"
             case .grabbableStatus:
                 return "grabbableStatus"
-            case .pickup:
-                return "pickup"
             case .catapultKnockOut:
                 return "catapultKnockOut"
             case .oneHitKOPrepareAnimation:
@@ -36,6 +34,8 @@ extension Action: CustomStringConvertible {
                 return "releaseEnd"
             case .requestKnockoutSync:
                 return "requestKnockoutSync"
+            case .physics:
+                return "physics"
             }
         case .boardSetup(let setup):
             switch setup {
@@ -44,8 +44,6 @@ extension Action: CustomStringConvertible {
             case .boardLocation:
                 return "boardLocation"
             }
-        case .physics:
-            return "physics"
         case .startGameMusic:
             return "startGameMusic"
         }

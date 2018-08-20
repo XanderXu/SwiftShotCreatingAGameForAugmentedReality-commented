@@ -7,20 +7,16 @@ iBeacon implementation for setting up at WWDC game room tables.
 
 import Foundation
 import CoreLocation
+import os.log
 
 private let regionUUID = UUID(uuidString: "53FA6CD3-DFE4-493C-8795-56E71D2DAEAF")!
 private let regionId = "GameRoom"
-private let log = Log()
 
 struct GameTableLocation: Equatable, Hashable {
     typealias ProximityLocationId = Int
     let identifier: ProximityLocationId
     let name: String
-    
-    var hashValue: Int {
-        return identifier.hashValue
-    }
-    
+
     private init(identifier: Int) {
         self.identifier = identifier
         self.name = "Table \(self.identifier)"
@@ -39,6 +35,10 @@ struct GameTableLocation: Equatable, Hashable {
     
     static func == (lhs: GameTableLocation, rhs: GameTableLocation) -> Bool {
         return lhs.identifier == rhs.identifier
+    }
+
+    func hash(into hasher: inout Hasher) {
+        identifier.hash(into: &hasher)
     }
 }
 
@@ -91,14 +91,14 @@ class ProximityManager: NSObject {
     
     func start() {
         guard isAvailable else { return }
-        log.debug("Starting beacon ranging")
+        os_log(.debug, "Starting beacon ranging")
         locationManager.startRangingBeacons(in: region)
     }
     
     func stop() {
         guard isAvailable else { return }
-        log.debug("Stopping beacon ranging")
-        log.debug("Closest location is: \(closestLocation?.identifier ?? 0)")
+        os_log(.debug, "Stopping beacon ranging")
+        os_log(.debug, "Closest location is: %d", closestLocation?.identifier ?? 0)
         locationManager.stopRangingBeacons(in: region)
     }
 }
@@ -109,17 +109,17 @@ extension ProximityManager: CLLocationManagerDelegate {
         let knownBeacons = beacons.filter { $0.proximity != CLProximity.unknown }
         for beacon in knownBeacons {
             let proximity = beacon.proximity.description
-            log.debug("Beacon \(beacon.minor) proximity: \(proximity)")
+            os_log(.debug, "Beacon %@ proximity: %s", beacon.minor, proximity)
         }
         if let beacon = knownBeacons.first {
-            log.debug("First Beacon is \(beacon.minor)")
+            os_log(.debug, "First Beacon is %@", beacon.minor)
             var location: GameTableLocation? = nil
             if beacon.proximity == .near || beacon.proximity == .immediate {
                 location = GameTableLocation.location(with: beacon.minor.intValue)
             }
             
             if closestLocation != location {
-                log.debug("Closest location changed to: \(location?.identifier ?? 0)")
+                os_log(.debug, "Closest location changed to: %d", location?.identifier ?? 0)
                 closestLocation = location
                 delegate?.proximityManager(self, didChange: location)
             }
@@ -127,29 +127,31 @@ extension ProximityManager: CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, rangingBeaconsDidFailFor region: CLBeaconRegion, withError error: Error) {
-        log.error("Ranging beacons failed for region \(region.identifier): (\(error.localizedDescription))")
+        os_log(.error, "Ranging beacons failed for region %s: (%s)", region.identifier, error.localizedDescription)
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        let statusString: String
         switch status {
         case .authorizedAlways:
-            log.debug("Changed location authorization status: always")
+            statusString = "always"
         case .authorizedWhenInUse:
-            log.debug("Changed location authorization status: when in use")
+            statusString = "when in use"
         case .denied:
-            log.debug("Changed location authorization status: denied")
+            statusString = "denied"
         case .notDetermined:
-            log.debug("Changed location authorization status: not determined")
+            statusString = "not determined"
         case .restricted:
-            log.debug("Changed location authorization status: restricted")
+            statusString = "restricted"
         }
-        
+        os_log(.debug, "Changed location authorization status: %s", statusString)
+
         if let delegate = delegate {
             delegate.proximityManager(self, didChange: self.isAuthorized)
         }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        log.error("Location manager did fail with error \(error.localizedDescription)")
+        os_log(.error, "Location manager did fail with error %s", error.localizedDescription)
     }
 }

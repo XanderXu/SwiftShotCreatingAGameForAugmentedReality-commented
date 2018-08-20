@@ -7,8 +7,7 @@ Convenience extension for various game-specific functionality on SCNNode.
 
 import Foundation
 import SceneKit
-
-private let log = Log()
+import os.log
 
 /**
  * Protect animation on SCNTransaction from multiple threads, can be nested too.
@@ -73,13 +72,13 @@ extension SCNNode {
         return findNodeWithGeometryHelper(node: self)
     }
     
-    var teamID: TeamID {
+    var team: Team {
         var parent = self.parent
         while let current = parent {
             if current.name == "_teamA" {
-                return .blue
+                return .teamA
             } else if current.name == "_teamB" {
-                return .yellow // red?
+                return .teamB
             }
             parent = current.parent
         }
@@ -213,7 +212,7 @@ extension SCNNode {
             fatalError("model \(modelFileName) has no child nodes")
         }
         if nodeRef.childNodes.count > 1 {
-            log.error("model \(modelFileName) should have a single root node")
+            os_log(.error, "model %s should have a single root node", modelFileName)
         }
         
         // walk down the scenegraph and update all children

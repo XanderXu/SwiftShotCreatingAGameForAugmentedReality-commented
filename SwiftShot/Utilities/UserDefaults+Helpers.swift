@@ -33,7 +33,6 @@ struct UserDefaultsKeys {
     static let hasOnboarded = "HasOnboarded"
     static let boardLocatingMode = "BoardLocatingMode"
     static let gameRoomMode = "GameRoomMode"
-    static let useEncryption = "UseEncryption"
     static let autoFocus = "AutoFocus"
     static let spectator = "Spectator"
 
@@ -58,13 +57,12 @@ extension UserDefaults {
         // worldMap is used insead.
         case manual = 2
     }
-    
+
     static let applicationDefaults: [String: Any] = [
         UserDefaultsKeys.spectator: false,
         UserDefaultsKeys.musicVolume: 0.0,
         UserDefaultsKeys.effectsVolume: 1.0,
         UserDefaultsKeys.antialiasingMode: true,
-        UserDefaultsKeys.useEncryption: true,
         UserDefaultsKeys.gameRoomMode: false,
         UserDefaultsKeys.autoFocus: true,
         UserDefaultsKeys.allowGameBoardAutoSize: false,
@@ -80,12 +78,16 @@ extension UserDefaults {
 
     var myself: Player {
         get {
-            guard let data = data(forKey: UserDefaultsKeys.peerID),
+            if let data = data(forKey: UserDefaultsKeys.peerID),
                 let unarchived = try? NSKeyedUnarchiver.unarchivedObject(ofClass: MCPeerID.self, from: data),
-                let peerID = unarchived else {
-                    return Player(username: UIDevice.current.name)
+                let peerID = unarchived {
+                return Player(peerID: peerID)
             }
-            return Player(peerID: peerID)
+            // if no playerID was previously selected, create and cache a new one.
+            let player = Player(username: UIDevice.current.name)
+            let newData = try? NSKeyedArchiver.archivedData(withRootObject: player.peerID, requiringSecureCoding: true)
+            set(newData, forKey: UserDefaultsKeys.peerID)
+            return player
         }
         set {
             let data = try? NSKeyedArchiver.archivedData(withRootObject: newValue.peerID, requiringSecureCoding: true)
@@ -174,11 +176,6 @@ extension UserDefaults {
     var gameRoomMode: Bool {
         get { return bool(forKey: UserDefaultsKeys.gameRoomMode) }
         set { set(newValue, forKey: UserDefaultsKeys.gameRoomMode) }
-    }
-
-    var useEncryption: Bool {
-        get { return bool(forKey: UserDefaultsKeys.useEncryption) }
-        set { set(newValue, forKey: UserDefaultsKeys.useEncryption) }
     }
     
     var showSettingsInGame: Bool {

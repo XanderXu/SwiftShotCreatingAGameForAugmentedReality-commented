@@ -8,6 +8,7 @@ Manages interactions for the slingshot.
 import SceneKit
 import simd
 import AVFoundation
+import os.log
 
 extension UIColor {
     convenience init(hexRed: UInt8, green: UInt8, blue: UInt8) {
@@ -19,44 +20,54 @@ extension UIColor {
     }
 }
 
-enum TeamID: Int {
+enum Team: Int {
     case none = 0 // default
-    case blue
-    case yellow
+    case teamA
+    case teamB
     
     var description: String {
         switch self {
-        // Use Internationalization, as appropriate.
-        case .none: return "none"
-        case .blue: return "Blue"     // TeamA - blue
-        case .yellow: return "Yellow" // TeamB - orange
+        case .none: return NSLocalizedString("none", comment: "Team name")
+        case .teamA: return NSLocalizedString("Blue", comment: "Team name")
+        case .teamB: return NSLocalizedString("Yellow", comment: "Team name")
         }
     }
 
     var color: UIColor {
         switch self {
         case .none: return .white
-        case .blue: return UIColor(hexRed: 45, green: 128, blue: 208) // srgb
-        case .yellow: return UIColor(hexRed: 239, green: 153, blue: 55)
+        case .teamA: return UIColor(hexRed: 45, green: 128, blue: 208) // srgb
+        case .teamB: return UIColor(hexRed: 239, green: 153, blue: 55)
         }
     }
 }
 
-extension TeamID: BitStreamCodable {
+extension Team: BitStreamCodable {
+    // We do not use the stanard enum encoding here to implement a tiny
+    // optimization; 99% of blocks are on no team, so this saves us almost 1 bit per block.
     func encode(to bitStream: inout WritableBitStream) {
-        bitStream.appendUInt32(UInt32(rawValue), numberOfBits: 2)
+        switch self {
+        case .none:
+            bitStream.appendBool(false)
+        case .teamA:
+            bitStream.appendBool(true)
+            bitStream.appendBool(true)
+        case .teamB:
+            bitStream.appendBool(true)
+            bitStream.appendBool(false)
+        }
     }
 
     init(from bitStream: inout ReadableBitStream) throws {
-        let rawValue = try bitStream.readUInt32(numberOfBits: 2)
-        guard let myself = TeamID(rawValue: Int(rawValue)) else {
-            throw BitStreamError.encodingError
+        let hasTeam = try bitStream.readBool()
+        if hasTeam {
+            let isTeamA = try bitStream.readBool()
+            self = isTeamA ? .teamA : .teamB
+        } else {
+            self = .none
         }
-        self = myself
     }
 }
-
-private let log = Log()
 
 public func clamp<T>(_ value: T, _ minValue: T, _ maxValue: T) -> T where T: Comparable {
     return min(max(value, minValue), maxValue)
@@ -142,7 +153,7 @@ class Catapult: GameObject, Grabbable {
     private(set) var isPulledTooFar = false
     
     // Last cameraInfo used to computed premature release (such as when other ball hit the catapult)
-    private(set) var lastCameraInfo = CameraInfo(transform: float4x4.identity, ray: Ray.zero)
+    private(set) var lastCameraInfo = CameraInfo(transform: .identity)
 
     // highlight assistance
     var isVisible: Bool = false
@@ -163,7 +174,7 @@ class Catapult: GameObject, Grabbable {
     // Each catapult has a unique index.
     // 1-3 are on one side, 4-6 are on the other side
     private(set) var catapultID: Int = 0
-    private(set) var teamID: TeamID = .none
+    private(set) var team: Team = .none
     private(set) var teamName: String
     
     // Grabbable ID to be set by GrabInteraction
@@ -300,8 +311,8 @@ class Catapult: GameObject, Grabbable {
         prongGeomNode.simdPivot = float4x4(translation: prongPivotShiftUp)
         prongGeomNode.simdPosition += prongPivotShiftUp
         
-        let baseShape = SCNPhysicsShape(node: baseGeomNode, options: [SCNPhysicsShape.Option.type: SCNPhysicsShape.ShapeType.convexHull])
-        let prongShape = SCNPhysicsShape(node: prongGeomNode, options: [SCNPhysicsShape.Option.type: SCNPhysicsShape.ShapeType.convexHull])
+        let baseShape = SCNPhysicsShape(node: baseGeomNode, options: [.type: SCNPhysicsShape.ShapeType.convexHull])
+        let prongShape = SCNPhysicsShape(node: prongGeomNode, options: [.type: SCNPhysicsShape.ShapeType.convexHull])
         let identityMatrix = SCNMatrix4Identity as NSValue
         let compoundShape = SCNPhysicsShape(shapes: [baseShape, prongShape], transforms: [identityMatrix, identityMatrix])
         node.physicsBody?.physicsShape = compoundShape
@@ -316,7 +327,7 @@ class Catapult: GameObject, Grabbable {
         placeholder.parent!.replaceChildNode(placeholder, with: node)
         
         node.name = "catapult"
-        log.info("Catapult placeholder node \(placeholder.name!) replaced with \(node.name!)")
+        os_log(.info, "Catapult placeholder node %s replaced with %s", placeholder.name!, node.name!)
         
         return node
     }
@@ -325,13 +336,16 @@ class Catapult: GameObject, Grabbable {
         self.base = node
         self.audioEnvironment = sfxCoordinator.audioEnvironment
         
-        // Base teamID and name off looking up teamA or teamB folder in the level parents
+        // Base team and name off looking up teamA or teamB folder in the level parents
         // This won't work on the old levels.
-        self.teamID = base.teamID
-        self.teamName = base.teamID.description
+        self.team = base.team
+        self.teamName = base.team.description
     
         // have team id established
         base.setPaintColors()
+        
+        // correct for the pivot point to place catapult flat on ground
+        base.position.y -= 0.13
         
         // highlight setup
         highlightObject = node.childNode(withName: "Highlight", recursively: true)
@@ -354,11 +368,10 @@ class Catapult: GameObject, Grabbable {
         // That's from bad decomposition of the matrix.  Need to restore the eulerAngles from the source.
         // Especially if we have animations tied to the euler angles.
         if abs(node.eulerAngles.x) > 0.001 || abs(node.eulerAngles.z) > 0.001 {
-            log.error("Catapult can only have y rotation applied")
+            os_log(.error, "Catapult can only have y rotation applied")
         }
     
         // where to place the ball so it sits on the strap
-        
         guard let catapultStrap = base.childNode(withName: "catapultStrap", recursively: true) else {
             fatalError("No node with name catapultStrap")
         }
@@ -392,14 +405,16 @@ class Catapult: GameObject, Grabbable {
         
         audioPlayer = CatapultAudioSampler(node: base, sfxCoordinator: sfxCoordinator)
         
-        super.init(node: node, index: nil, gamedefs: gamedefs)
+        super.init(node: node, index: nil, gamedefs: gamedefs, alive: true, server: false)
         
-        // use the teamID to set the collision category mask
+        // use the team to set the collision category mask
         if let physicsNode = physicsNode, let physBody = physicsNode.physicsBody {
-            if teamID == .blue {
-                physBody.categoryBitMask = CollisionMask.catapultBlue.rawValue
-            } else if teamID == .yellow {
-                physBody.categoryBitMask = CollisionMask.catapultYellow.rawValue
+            if team == .teamA {
+                physBody.categoryBitMask = CollisionMask.catapultTeamA.rawValue
+                physBody.collisionBitMask |= CollisionMask.catapultTeamB.rawValue
+            } else if team == .teamB {
+                physBody.categoryBitMask = CollisionMask.catapultTeamB.rawValue
+                physBody.collisionBitMask |= CollisionMask.catapultTeamA.rawValue
             }
         }
     }
@@ -418,7 +433,7 @@ class Catapult: GameObject, Grabbable {
         let projectilePaddingScale: Float = 1.0
         rope.setBallRadius(projectile.boundingSphere.radius * projectilePaddingScale)
         
-        // need ball to set a teamID, and then can color with same mechanism
+        // need ball to set a team, and then can color with same mechanism
         //projectile.setPaintColor()
         
         // will be made visible and drop when cooldown is exceeded,
@@ -520,13 +535,13 @@ class Catapult: GameObject, Grabbable {
             return
         }
         let position = base.presentation.simdWorldPosition
-        let speed = simd_length((position - lastPositionNonNil) / Float(GameTime.deltaTime))
+        let speed = length((position - lastPositionNonNil) / Float(GameTime.deltaTime))
         lastPosition = position
         
         // Base below table?
         // Base tilted? base's up vector must maintain some amount of y to be determined as stable
-        let baseUp = simd_normalize(base.presentation.simdTransform.columns.1)
-        if position.y < -1.0 || fabs(baseUp.y) < minStableTiltBaseUpY {
+        let baseUp = normalize(base.presentation.simdTransform.columns.1)
+        if position.y < -1.0 || abs(baseUp.y) < minStableTiltBaseUpY {
             // Switch to knocked mode
             if !isCatapultKnocked {
                 catapultKnockedStartTime = GameTime.time
@@ -545,8 +560,8 @@ class Catapult: GameObject, Grabbable {
     
     // When a user has control of a slingshot, no other player can grab it.
     func serverGrab(cameraRay: Ray) {
-        guard !isGrabbed else { log.error("Trying to grab catapult with player"); return }
-        log.debug("(Server) Catapult\(catapultID) grabbed by player")
+        guard !isGrabbed else { os_log(.error, "Trying to grab catapult with player"); return }
+        os_log(.debug, "(Server) Catapult%d grabbed by player", catapultID)
 
         // do slingshot grab
         if let slingComponent = base.gameObject?.component(ofType: SlingshotComponent.self) {
@@ -555,7 +570,7 @@ class Catapult: GameObject, Grabbable {
     }
     
     func onGrabStart() {
-        log.debug("(Player) Catapult\(catapultID) grabbed by player")
+        os_log(.debug, "(Player) Catapult%d grabbed by player", catapultID)
         
         // do local effects/haptics if this event was generated by the current player
         delegate?.catapultDidBeginGrab(self)
@@ -673,7 +688,7 @@ class Catapult: GameObject, Grabbable {
         
         // only use the 2d distance, so that user can gauage stretch indepdent of mtch
         var distance2D = targetBallPosition - pullWorldPosition
-        let stretchY = fabs(distance2D.y)
+        let stretchY = abs(distance2D.y)
         distance2D.y = 0
         
         var stretchDistance = length(distance2D)
@@ -703,15 +718,17 @@ class Catapult: GameObject, Grabbable {
         catapultFront.y = 0.0
         base.simdWorldPosition = baseWorldPosition
         base.simdLook(at: baseWorldPosition + catapultFront)
-        
-        base.physicsBody?.isAffectedByGravity = false
-        base.physicsBody?.resetTransform()
+
+        if let physicsBody = base.physicsBody {
+            physicsBody.isAffectedByGravity = false
+            physicsBody.resetTransform()
+        }
     }
     
     // As players move, track the stretch of the sling.
     func move(cameraInfo: CameraInfo) {
         // move actions can be processed only after the catapult has been released
-        guard isGrabbed else { log.error("trying to move before grabbing catapult"); return }
+        guard isGrabbed else { os_log(.error, "trying to move before grabbing catapult"); return }
         
         lastCameraInfo = cameraInfo
         let targetBallPosition = computeBallPosition(cameraInfo)
@@ -751,7 +768,7 @@ class Catapult: GameObject, Grabbable {
         ballCanBeGrabbed = false
         
         // update local information for current player if that is what is pulling the catapult
-        log.debug("Catapult\(catapultID) launched")
+        os_log(.debug, "Catapult%d launched", catapultID)
 
         // start the launch animation
         rope.launchBall()
@@ -837,7 +854,7 @@ class Catapult: GameObject, Grabbable {
             let timeElapsed = GameTime.time - lastLaunchTime
             var timeForCooldown = props.cooldownTime - props.growAnimationTime - props.dropAnimationTime
             if timeForCooldown < 0.01 {
-                log.error("cooldown time needs to be long enough to play animations")
+                os_log(.error, "cooldown time needs to be long enough to play animations")
                 timeForCooldown = 0.0
             }
             let startCooldownAnimation = timeElapsed > timeForCooldown
@@ -858,5 +875,11 @@ class Catapult: GameObject, Grabbable {
                 projectile?.simdWorldPosition = ballOriginInactiveBelow.presentation.simdWorldPosition
             }
         }
+    }
+
+    override func apply(physicsData nodeData: PhysicsNodeData, isHalfway: Bool) {
+        // for catapults, we only apply physics updates when we're not grabbed.
+        guard !isGrabbed else { return }
+        super.apply(physicsData: nodeData, isHalfway: isHalfway)
     }
 }

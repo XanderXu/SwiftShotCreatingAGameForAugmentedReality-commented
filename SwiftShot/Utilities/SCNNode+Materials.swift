@@ -7,8 +7,7 @@ Convenience extension for updating SCNNode geometry and materials after loading.
 
 import Foundation
 import SceneKit
-
-private let log = Log()
+import os.log
 
 // helpers for updating geometry and materials after loading
 extension SCNNode {
@@ -199,7 +198,7 @@ extension SCNNode {
     func setPaintColors() {
         if let geometry = geometry {
             // paintColor can be UIColor or SCNVector4
-            let paintColor = teamID.color
+            let paintColor = team.color
             
             if geometry.hasUniform(SCNNode.paintMaskColorKey) {
                 geometry.setColor(SCNNode.paintMaskColorKey, paintColor)
@@ -219,10 +218,10 @@ extension SCNNode {
         }
     }
     
-    func setPaintColors(teamID: TeamID) {
+    func setPaintColors(team: Team) {
         if let geometry = geometry {
             // paintColor can be UIColor or SCNVector4
-            let paintColor = teamID.color
+            let paintColor = team.color
             
             if geometry.hasUniform(SCNNode.paintMaskColorKey) {
                 geometry.setColor(SCNNode.paintMaskColorKey, paintColor)
@@ -238,7 +237,7 @@ extension SCNNode {
         }
         
         for child in childNodes {
-            child.setPaintColors(teamID: teamID)
+            child.setPaintColors(team: team)
         }
     }
     
@@ -275,7 +274,7 @@ extension SCNNode {
         let texturePath = "gameassets.scnassets/textures/\(paintMask).ktx"
         
         if name.contains("catapult") {
-            log.debug("visited \(name) for texture")
+            os_log(.debug, "visited %s for texture", name)
         }
         
         let surfaceScript = """

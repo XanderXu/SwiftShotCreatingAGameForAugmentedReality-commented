@@ -7,14 +7,13 @@ View controller for in-game 2D overlay UI.
 
 import UIKit
 import AVFoundation
+import os.log
 
-private let log = Log()
-
-protocol OverlayViewControllerDelegate: class {
-    func overlayViewController(_ overlayViewController: UIViewController, didPressStartSoloGameButton: UIButton)
-    func overlayViewController(_ overlayViewController: UIViewController, didSelect game: GameSession)
-    func overlayViewController(_ overlayViewController: UIViewController, didStart game: GameSession)
-    func overlayViewControllerSelectedSettings(_ overlayViewController: UIViewController)
+protocol GameStartViewControllerDelegate: class {
+    func gameStartViewController(_ gameStartViewController: UIViewController, didPressStartSoloGameButton: UIButton)
+    func gameStartViewController(_ gameStartViewController: UIViewController, didSelect game: NetworkSession)
+    func gameStartViewController(_ gameStartViewController: UIViewController, didStart game: NetworkSession)
+    func gameStartViewControllerSelectedSettings(_ gameStartViewController: UIViewController)
 }
 
 enum GameSegue: String {
@@ -24,8 +23,8 @@ enum GameSegue: String {
     case levelSelector
 }
 
-class OverlayViewController: UIViewController {
-    weak var delegate: OverlayViewControllerDelegate?
+class GameStartViewController: UIViewController {
+    weak var delegate: GameStartViewControllerDelegate?
     
     @IBOutlet weak var hostButton: UIButton!
     @IBOutlet weak var joinButton: UIButton!
@@ -58,16 +57,16 @@ class OverlayViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if UserDefaults.standard.gameRoomMode {
-            log.debug("Will start beacon ranging")
+            os_log(.debug, "Will start beacon ranging")
             proximityManager.start()
         }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        log.info("segue!")
+        os_log(.info, "segue!")
         guard let segueIdentifier = segue.identifier,
             let segueType = GameSegue(rawValue: segueIdentifier) else {
-                log.error("unknown segue \(String(describing: segue.identifier))")
+                os_log(.error, "unknown segue %s", String(describing: segue.identifier))
                 return
         }
         
@@ -82,13 +81,13 @@ class OverlayViewController: UIViewController {
         }
     }
     
-    func joinGame(session: GameSession) {
-        delegate?.overlayViewController(self, didSelect: session)
+    func joinGame(session: NetworkSession) {
+        delegate?.gameStartViewController(self, didSelect: session)
         setupOverlayVC()
     }
     
     @IBAction func startSoloGamePressed(_ sender: UIButton) {
-        delegate?.overlayViewController(self, didPressStartSoloGameButton: sender)
+        delegate?.gameStartViewController(self, didPressStartSoloGameButton: sender)
     }
     
     @IBAction func startGamePressed(_ sender: UIButton) {
@@ -98,7 +97,7 @@ class OverlayViewController: UIViewController {
     }
     
     @IBAction func settingsPressed(_ sender: Any) {
-        delegate?.overlayViewControllerSelectedSettings(self)
+        delegate?.gameStartViewControllerSelectedSettings(self)
     }
    
     @IBAction func joinButtonPressed(_ sender: Any) {
@@ -135,13 +134,13 @@ class OverlayViewController: UIViewController {
             location = nil
         }
         
-        let gameSession = GameSession(myself: player, asServer: true, location: location, host: myself)
-        delegate?.overlayViewController(self, didStart: gameSession)
+        let gameSession = NetworkSession(myself: player, asServer: true, location: location, host: myself)
+        delegate?.gameStartViewController(self, didStart: gameSession)
         setupOverlayVC()
     }
 }
 
-extension OverlayViewController: ProximityManagerDelegate {
+extension GameStartViewController: ProximityManagerDelegate {
     func proximityManager(_ manager: ProximityManager, didChange location: GameTableLocation?) {
         gameBrowser?.refresh()
     }

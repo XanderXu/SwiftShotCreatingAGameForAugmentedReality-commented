@@ -8,8 +8,6 @@ Utilities for compact serialization of data structures for network transmission.
 import Foundation
 import simd
 
-private let log = Log()
-
 enum BitStreamError: Error {
     case tooShort
     case encodingError
@@ -219,6 +217,14 @@ struct ReadableBitStream {
 
         let result = Data(bytes[currentByte..<endByte])
         currentBit += length * 8
+        return result
+    }
+
+    mutating func readEnum<T>() throws -> T where T: CaseIterable & RawRepresentable, T.RawValue == UInt32 {
+        let rawValue = try readUInt32(numberOfBits: T.bits)
+        guard let result = T(rawValue: rawValue) else {
+            throw BitStreamError.encodingError
+        }
         return result
     }
 

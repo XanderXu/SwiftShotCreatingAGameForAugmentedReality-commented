@@ -86,12 +86,18 @@ enum GameBoardLocation: BitStreamCodable {
     case worldMapData(Data)
     case manual
 
+    enum CodingKey: UInt32, CaseIterable {
+        case worldMapData
+        case manual
+    }
+
     init(from bitStream: inout ReadableBitStream) throws {
-        let isWorldMap = try bitStream.readBool()
-        if isWorldMap {
+        let key: CodingKey = try bitStream.readEnum()
+        switch key {
+        case .worldMapData:
             let data = try bitStream.readData()
             self = .worldMapData(data)
-        } else {
+        case .manual:
             self = .manual
         }
     }
@@ -99,10 +105,10 @@ enum GameBoardLocation: BitStreamCodable {
     func encode(to bitStream: inout WritableBitStream) {
         switch self {
         case .worldMapData(let data):
-            bitStream.appendBool(true)
+            bitStream.appendEnum(CodingKey.worldMapData)
             bitStream.append(data)
         case .manual:
-            bitStream.appendBool(false)
+            bitStream.appendEnum(CodingKey.manual)
         }
     }
 }
@@ -111,11 +117,17 @@ enum BoardSetupAction: BitStreamCodable {
     case requestBoardLocation
     case boardLocation(GameBoardLocation)
 
+    enum CodingKey: UInt32, CaseIterable {
+        case requestBoardLocation
+        case boardLocation
+
+    }
     init(from bitStream: inout ReadableBitStream) throws {
-        let isRequest = try bitStream.readBool()
-        if isRequest {
+        let key: CodingKey = try bitStream.readEnum()
+        switch key {
+        case .requestBoardLocation:
             self = .requestBoardLocation
-        } else {
+        case .boardLocation:
             let location = try GameBoardLocation(from: &bitStream)
             self = .boardLocation(location)
         }
@@ -124,9 +136,9 @@ enum BoardSetupAction: BitStreamCodable {
     func encode(to bitStream: inout WritableBitStream) {
         switch self {
         case .requestBoardLocation:
-            bitStream.appendBool(true)
+            bitStream.appendEnum(CodingKey.requestBoardLocation)
         case .boardLocation(let location):
-            bitStream.appendBool(false)
+            bitStream.appendEnum(CodingKey.boardLocation)
             location.encode(to: &bitStream)
         }
     }
@@ -152,18 +164,20 @@ extension Ray: BitStreamCodable {
 
 struct CameraInfo {
     var transform: float4x4
-    var ray: Ray
+    var ray: Ray {
+        let position = transform.translation
+        let direction = normalize((transform * float4(0, 0, -1, 0)).xyz)
+        return Ray(position: position, direction: direction)
+    }
 }
 
 extension CameraInfo: BitStreamCodable {
     init(from bitStream: inout ReadableBitStream) throws {
-        transform = try float4x4(from: &bitStream)
-        ray = try Ray(from: &bitStream)
+        self.init(transform: try float4x4(from: &bitStream))
     }
 
     func encode(to bitStream: inout WritableBitStream) {
         transform.encode(to: &bitStream)
-        ray.encode(to: &bitStream)
     }
 }
 
@@ -202,26 +216,6 @@ extension InteractionState: BitStreamCodable {
     }
 }
 
-struct ManipulationData {
-    var state: InteractionState
-    var ray: Ray
-    var hitName: String
-}
-
-extension ManipulationData: BitStreamCodable {
-    init(from bitStream: inout ReadableBitStream) throws {
-        state = try InteractionState(from: &bitStream)
-        ray = try Ray(from: &bitStream)
-        hitName = try String(from: &bitStream)
-    }
-
-    func encode(to bitStream: inout WritableBitStream) throws {
-        state.encode(to: &bitStream)
-        ray.encode(to: &bitStream)
-        try hitName.encode(to: &bitStream)
-    }
-}
-
 // when a catapult is knocked down
 struct HitCatapult {
     var catapultID: Int
@@ -245,16 +239,11 @@ extension HitCatapult: BitStreamCodable {
 
 extension ProjectileType: BitStreamCodable {
     init(from bitStream: inout ReadableBitStream) throws {
-        let rawValue = Int(try bitStream.readUInt32(numberOfBits: 2))
-        if let value = ProjectileType(rawValue: rawValue) {
-            self = value
-        } else {
-            throw BitStreamError.encodingError
-        }
+        self = try bitStream.readEnum()
     }
 
     func encode(to bitStream: inout WritableBitStream) {
-        bitStream.appendUInt32(UInt32(rawValue), numberOfBits: 2)
+        bitStream.appendEnum(self)
     }
 }
 
@@ -324,7 +313,6 @@ extension LeverMove: BitStreamCodable {
 
 /// - Tag: GameAction
 enum GameAction {
-    case pickup(ManipulationData)
     case oneHitKOPrepareAnimation
     
     case tryGrab(GrabInfo)
@@ -340,8 +328,9 @@ enum GameAction {
     case catapultKnockOut(HitCatapult)
     case leverMove(LeverMove)
 
-    private enum CodingKeys: UInt32, CaseIterable {
-        case pickup
+    case physics(PhysicsSyncData)
+
+    private enum CodingKey: UInt32, CaseIterable {
         case oneHitKOAnimate
         
         case tryGrab
@@ -355,19 +344,15 @@ enum GameAction {
         case knockoutSync
         case hitCatapult
         case leverMove
+
+        case physicsSyncData
     }
 }
 
 extension GameAction: BitStreamCodable {
     init(from bitStream: inout ReadableBitStream) throws {
-        let keyValue = try bitStream.readUInt32(numberOfBits: CodingKeys.bits)
-        guard let key = CodingKeys(rawValue: keyValue) else {
-            throw BitStreamError.encodingError
-        }
+        let key: CodingKey = try bitStream.readEnum()
         switch key {
-        case .pickup:
-            let data = try ManipulationData(from: &bitStream)
-            self = .pickup(data)
         case .oneHitKOAnimate:
             self = .oneHitKOPrepareAnimation
             
@@ -401,45 +386,49 @@ extension GameAction: BitStreamCodable {
         case .leverMove:
             let data = try LeverMove(from: &bitStream)
             self = .leverMove(data)
+
+        case .physicsSyncData:
+            let data = try PhysicsSyncData(from: &bitStream)
+            self = .physics(data)
         }
     }
 
     func encode(to bitStream: inout WritableBitStream) throws {
         switch self {
-        case .pickup(let data):
-            bitStream.appendEnum(CodingKeys.pickup)
-            try data.encode(to: &bitStream)
         case .oneHitKOPrepareAnimation:
-            bitStream.appendEnum(CodingKeys.oneHitKOAnimate)
+            bitStream.appendEnum(CodingKey.oneHitKOAnimate)
         case .tryGrab(let data):
-            bitStream.appendEnum(CodingKeys.tryGrab)
+            bitStream.appendEnum(CodingKey.tryGrab)
             data.encode(to: &bitStream)
         case .grabStart(let data):
-            bitStream.appendEnum(CodingKeys.grabStart)
+            bitStream.appendEnum(CodingKey.grabStart)
             data.encode(to: &bitStream)
         case .grabMove(let data):
-            bitStream.appendEnum(CodingKeys.grabMove)
+            bitStream.appendEnum(CodingKey.grabMove)
             data.encode(to: &bitStream)
         case .tryRelease(let data):
-            bitStream.appendEnum(CodingKeys.tryRelease)
+            bitStream.appendEnum(CodingKey.tryRelease)
             data.encode(to: &bitStream)
         case .releaseEnd(let data):
-            bitStream.appendEnum(CodingKeys.releaseEnd)
+            bitStream.appendEnum(CodingKey.releaseEnd)
             data.encode(to: &bitStream)
         case .catapultRelease(let data):
-            bitStream.appendEnum(CodingKeys.catapultRelease)
+            bitStream.appendEnum(CodingKey.catapultRelease)
             data.encode(to: &bitStream)
         case .grabbableStatus(let data):
-            bitStream.appendEnum(CodingKeys.grabbableStatus)
+            bitStream.appendEnum(CodingKey.grabbableStatus)
             data.encode(to: &bitStream)
         case .requestKnockoutSync:
-            bitStream.appendEnum(CodingKeys.knockoutSync)
+            bitStream.appendEnum(CodingKey.knockoutSync)
         case .catapultKnockOut(let coords):
-            bitStream.appendEnum(CodingKeys.hitCatapult)
+            bitStream.appendEnum(CodingKey.hitCatapult)
             coords.encode(to: &bitStream)
         case .leverMove(let data):
-            bitStream.appendEnum(CodingKeys.leverMove)
+            bitStream.appendEnum(CodingKey.leverMove)
             try data.encode(to: &bitStream)
+        case .physics(let data):
+            bitStream.appendEnum(CodingKey.physicsSyncData)
+            data.encode(to: &bitStream)
         }
     }
 }
@@ -488,45 +477,42 @@ extension StartGameMusicTime: CustomDebugStringConvertible {
 enum Action {
     case gameAction(GameAction)
     case boardSetup(BoardSetupAction)
-    case physics(PhysicsSyncData)
     case startGameMusic(StartGameMusicTime)
 }
 
 extension Action: BitStreamCodable {
+    private enum CodingKey: UInt32, CaseIterable {
+        case gameAction
+        case boardSetup
+        case startGameMusic
+    }
+
     func encode(to bitStream: inout WritableBitStream) throws {
         switch self {
         case .gameAction(let gameAction):
-            bitStream.appendUInt32(0, numberOfBits: 2)
+            bitStream.appendEnum(CodingKey.gameAction)
             try gameAction.encode(to: &bitStream)
         case .boardSetup(let boardSetup):
-            bitStream.appendUInt32(1, numberOfBits: 2)
+            bitStream.appendEnum(CodingKey.boardSetup)
             boardSetup.encode(to: &bitStream)
-        case .physics(let physicsData):
-            bitStream.appendUInt32(2, numberOfBits: 2)
-            physicsData.encode(to: &bitStream)
         case .startGameMusic(let timeData):
-            bitStream.appendUInt32(3, numberOfBits: 2)
+            bitStream.appendEnum(CodingKey.startGameMusic)
             timeData.encode(to: &bitStream)
         }
     }
 
     init(from bitStream: inout ReadableBitStream) throws {
-        let code = try bitStream.readUInt32(numberOfBits: 2)
+        let code: CodingKey = try bitStream.readEnum()
         switch code {
-        case 0:
+        case .gameAction:
             let gameAction = try GameAction(from: &bitStream)
             self = .gameAction(gameAction)
-        case 1:
+        case .boardSetup:
             let boardAction = try BoardSetupAction(from: &bitStream)
             self = .boardSetup(boardAction)
-        case 2:
-            let physics = try PhysicsSyncData(from: &bitStream)
-            self = .physics(physics)
-        case 3:
+        case .startGameMusic:
             let timeData = try StartGameMusicTime(from: &bitStream)
             self = .startGameMusic(timeData)
-        default:
-            throw BitStreamError.encodingError
         }
     }
 }

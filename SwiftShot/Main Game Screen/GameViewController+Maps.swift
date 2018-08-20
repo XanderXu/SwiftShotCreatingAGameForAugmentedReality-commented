@@ -7,8 +7,7 @@ Maps saving and loading methods for the Game Scene View Controller.
 
 import UIKit
 import ARKit
-
-private let log = Log()
+import os.log
 
 extension GameViewController {
     
@@ -164,22 +163,22 @@ extension GameViewController {
     }
     
     func getCurrentWorldMapData(_ closure: @escaping (Data?, Error?) -> Void) {
-        log.info("in getCurrentWordMapData")
+        os_log(.info, "in getCurrentWordMapData")
         // When loading a map, send the loaded map and not the current extended map
         if let targetWorldMap = targetWorldMap {
-            log.info("using existing worldmap, not asking session for a new one.")
+            os_log(.info, "using existing worldmap, not asking session for a new one.")
             compressMap(map: targetWorldMap, closure)
             return
         } else {
-            log.info("asking ARSession for the world map")
+            os_log(.info, "asking ARSession for the world map")
             sceneView.session.getCurrentWorldMap { map, error in
-                log.info("ARSession getCurrentWorldMap returned")
+                os_log(.info, "ARSession getCurrentWorldMap returned")
                 if let error = error {
-                    log.error("didn't work! \(error)")
+                    os_log(.error, "didn't work! %s", "\(error)")
                     closure(nil, error)
                 }
-                guard let map = map else { log.error("no map either!"); return }
-                log.info("got a worldmap, compressing it")
+                guard let map = map else { os_log(.error, "no map either!"); return }
+                os_log(.info, "got a worldmap, compressing it")
                 self.compressMap(map: map, closure)
             }
         }
@@ -197,14 +196,15 @@ extension GameViewController {
                     return
                 }
                 
-                guard let data = data else { log.error("no data"); return }
+                guard let data = data else { os_log(.error, "no data"); return }
                 self.showSaveDialog(for: data)
             }
         }
     }
     
     @IBAction func loadPressed(_ sender: Any) {
-        let picker = UIDocumentPickerViewController(documentTypes: ["com.apple.swiftshot.worldmap"], in: .open)
+        let typeIdentifier = Bundle.main.bundleIdentifier! + ".worldmap"
+        let picker = UIDocumentPickerViewController(documentTypes: [typeIdentifier], in: .open)
         picker.allowsMultipleSelection = false
         picker.delegate = self
         present(picker, animated: true, completion: nil)
@@ -215,7 +215,7 @@ extension GameViewController {
         dialog.addTextField(configurationHandler: nil)
         let saveAction = UIAlertAction(title: "Save", style: .default) { action in
             guard let fileName = dialog.textFields?.first?.text else {
-                log.error("no filename"); return
+                os_log(.error, "no filename"); return
             }
             DispatchQueue.global(qos: .background).async {
                 do {
@@ -264,12 +264,12 @@ extension GameViewController {
         DispatchQueue.global().async {
             do {
                 let data = try NSKeyedArchiver.archivedData(withRootObject: map, requiringSecureCoding: true)
-                log.info("data size is \(data.count)")
+                os_log(.info, "data size is %d", data.count)
                 let compressedData = data.compressed()
-                log.info("compressed size is \(compressedData.count)")
+                os_log(.info, "compressed size is %d", compressedData.count)
                 closure(compressedData, nil)
             } catch {
-                log.error("archiving failed \(error)")
+                os_log(.error, "archiving failed %s", "\(error)")
                 closure(nil, error)
             }
         }
@@ -279,14 +279,14 @@ extension GameViewController {
 extension GameViewController: UIDocumentPickerDelegate {
     
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        log.info("Selected external WorldMap")
+        os_log(.info, "Selected external WorldMap")
         guard let selected = urls.first else { return }
         fetchArchivedWorldMap(from: selected, { data, error in
             if let error = error {
-                log.error("Failed to load the external WorldMap! \(error)")
+                os_log(.error, "Failed to load the external WorldMap! %s", "\(error)")
                 return
             }
-            guard let data = data else { log.error("No data received while loading an external WorldMap"); return }
+            guard let data = data else { os_log(.error, "No data received while loading an external WorldMap"); return }
             self.loadWorldMap(from: data)
         })
     }

@@ -8,8 +8,6 @@ Manages objects that need synchronized updating.
 import Foundation
 import SceneKit
 
-private let log = Log()
-
 class GameObjectManager {
     
     // MARK: - Block Management
@@ -45,10 +43,9 @@ class GameObjectManager {
     }
     
     // MARK: - Shared Management
-    
-    func update() {
-        for projectile in projectiles where projectile.isAlive {
-            projectile.update()
+    func update(deltaTime: TimeInterval) {
+        for projectile in projectiles {
+            projectile.update(deltaTime: deltaTime)
         }
     }
 

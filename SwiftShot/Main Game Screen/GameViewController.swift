@@ -3,7 +3,6 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Main view controller for the AR game.
-AR游戏的主控制器.
 */
 
 import UIKit
@@ -11,8 +10,6 @@ import SceneKit
 import ARKit
 import AVFoundation
 import os.signpost
-
-private let log = Log()
 
 class GameViewController: UIViewController {
     enum SessionState {
@@ -89,38 +86,31 @@ class GameViewController: UIViewController {
     
     @IBOutlet var teamACatapultImages: [UIImageView]!
     @IBOutlet var teamBCatapultImages: [UIImageView]!
-    private var teamADisabledCatapultCount = 0 {
+
+    private var teamACatapultCount = 0 {
         didSet {
-            guard oldValue != teamADisabledCatapultCount else { return }
-            
-            var disabledCount = 0
-            for catapultImage in self.teamACatapultImages.reversed() {
-                if disabledCount < self.teamADisabledCatapultCount {
-                    catapultImage.isHighlighted = true
-                    disabledCount += 1
-                } else {
-                    break
-                }
-            }
-            
-        }
-    }
-    private var teamBDisabledCatapultCount = 0 {
-        didSet {
-            guard oldValue != teamBDisabledCatapultCount else { return }
-            
-            var disabledCount = 0
-            for catapultImage in self.teamBCatapultImages.reversed() {
-                if disabledCount < self.teamBDisabledCatapultCount {
-                    catapultImage.isHighlighted = true
-                    disabledCount += 1
-                } else {
-                    break
-                }
+            guard oldValue != teamACatapultCount else { return }
+
+            // The "highlighted" state actually means that the catapult has been disabled.
+            for (index, catapultImage) in teamACatapultImages.enumerated() {
+                let shouldAppear = index < teamACatapultCount
+                catapultImage.isHighlighted = !shouldAppear
             }
         }
     }
-    
+
+    private var teamBCatapultCountTemp = 0 {
+        didSet {
+            guard oldValue != teamBCatapultCountTemp else { return }
+
+            // The "highlighted" state actually means that the catapult has been disabled.
+            for (index, catapultImage) in teamBCatapultImages.enumerated() {
+                let shouldAppear = index < teamBCatapultCountTemp
+                catapultImage.isHighlighted = !shouldAppear
+            }
+        }
+    }
+
     var gameManager: GameManager? {
         didSet {
             guard let manager = gameManager else {
@@ -141,7 +131,7 @@ class GameViewController: UIViewController {
         didSet {
             guard oldValue != sessionState else { return }
 
-            log.info("session state changed to \(sessionState)")
+            os_log(.info, "session state changed to %s", "\(sessionState)")
             configureView()
             configureARSession()
         }
@@ -164,7 +154,6 @@ class GameViewController: UIViewController {
     }
 
     // used when state is localizingToWorldMap or localizingToSavedMap
-    // 当状态是localizingToWorldMap 或 localizingToSavedMap 时使用.
     var targetWorldMap: ARWorldMap?
 
     var gameBoard = GameBoard()
@@ -189,7 +178,6 @@ class GameViewController: UIViewController {
     }
 
     // Proximity manager for beacons
-    // beacon的接近管理器
     let proximityManager = ProximityManager.shared
 
     var canAdjustBoard: Bool {
@@ -212,7 +200,6 @@ class GameViewController: UIViewController {
         // hierarchy of the scene, so it isn't affected by changes to the scene scale.
         // On each frame update, however, its position is explicitly set to a transformed
         // value that is consistent with the game objects in the scene.
-        // 
         sceneView.audioListener = audioListenerNode
 
         sceneView.scene.rootNode.addChildNode(gameBoard)
@@ -242,7 +229,6 @@ class GameViewController: UIViewController {
                                                object: nil)
         
         // this preloads the assets used by the level - materials and texture and compiles shaders
-        // 预加载素材根据等级来加载--材质和纹理,和着色器编译
         preloadLevel()
     }
 
@@ -287,7 +273,7 @@ class GameViewController: UIViewController {
         // 0, 2, 4 on iOS, 8, 16x on macOS
         sceneView.antialiasingMode = UserDefaults.standard.antialiasingMode ? .multisampling4X : .none
         
-        log.info("antialiasing set to: " + (UserDefaults.standard.antialiasingMode ? "4x" : "none"))
+        os_log(.info, "antialiasing set to: %s", UserDefaults.standard.antialiasingMode ? "4x" : "none")
         
         if let localizedInstruction = sessionState.localizedInstruction {
             instructionLabel.isHidden = false
@@ -326,7 +312,7 @@ class GameViewController: UIViewController {
         switch sessionState {
         case .setup:
             // in setup
-            log.info("AR session paused")
+            os_log(.info, "AR session paused")
             sceneView.session.pause()
             return
         case .lookingForSurface, .waitingForBoard:
@@ -343,7 +329,7 @@ class GameViewController: UIViewController {
             // so no change to the running session
             return
         case .localizingToBoard:
-            guard let targetWorldMap = targetWorldMap else { log.error("should have had a world map"); return }
+            guard let targetWorldMap = targetWorldMap else { os_log(.error, "should have had a world map"); return }
             configuration.initialWorldMap = targetWorldMap
             configuration.planeDetection = [.horizontal]
             options = [.resetTracking, .removeExistingAnchors]
@@ -365,7 +351,7 @@ class GameViewController: UIViewController {
         // Turning light estimation off to test PBR on SceneKit file
         configuration.isLightEstimationEnabled = false
         
-        log.info("configured AR session")
+        os_log(.info, "configured AR session")
         sceneView.session.run(configuration, options: options)
     }
 
@@ -475,10 +461,10 @@ class GameViewController: UIViewController {
         case .boardLocation(let location):
             switch location {
             case .worldMapData(let data):
-                log.info("Received WorldMap data. Size: \(data.count)")
+                os_log(.info, "Received WorldMap data. Size: %d", data.count)
                 loadWorldMap(from: data)
             case .manual:
-                log.info("Received a manual board placement")
+                os_log(.info, "Received a manual board placement")
                 sessionState = .lookingForSurface
             }
         case .requestBoardLocation:
@@ -491,7 +477,7 @@ class GameViewController: UIViewController {
         do {
             let uncompressedData = try archivedData.decompressed()
             guard let worldMap = try NSKeyedUnarchiver.unarchivedObject(ofClass: ARWorldMap.self, from: uncompressedData) else {
-                log.error("The WorldMap received couldn't be read")
+                os_log(.error, "The WorldMap received couldn't be read")
                 DispatchQueue.main.async {
                     self.showAlert(title: "An error occured while loading the WorldMap (Failed to read)")
                     self.sessionState = .setup
@@ -504,7 +490,7 @@ class GameViewController: UIViewController {
                 self.sessionState = .localizingToBoard
             }
         } catch {
-            log.error("The WorldMap received couldn't be decompressed")
+            os_log(.error, "The WorldMap received couldn't be decompressed")
             DispatchQueue.main.async {
                 self.showAlert(title: "An error occured while loading the WorldMap (Failed to decompress)")
                 self.sessionState = .setup
@@ -513,7 +499,7 @@ class GameViewController: UIViewController {
     }
     
     func preloadLevel() {
-        os_signpost(type: .begin, log: .preload_assets, name: .preload_assets, signpostID: .preload_assets,
+        os_signpost(.begin, log: .preload_assets, name: .preload_assets, signpostID: .preload_assets,
                     "Preloading assets started")
 
         let main = DispatchQueue.main
@@ -538,10 +524,10 @@ class GameViewController: UIViewController {
                         // preparing a scene compiles shaders
                         self.sceneView.prepare([scene], completionHandler: { success in
                             if success {
-                                os_signpost(type: .end, log: .preload_assets, name: .preload_assets, signpostID: .preload_assets,
+                                os_signpost(.end, log: .preload_assets, name: .preload_assets, signpostID: .preload_assets,
                                             "Preloading assets succeeded")
                             } else {
-                                os_signpost(type: .end, log: .preload_assets, name: .preload_assets, signpostID: .preload_assets,
+                                os_signpost(.end, log: .preload_assets, name: .preload_assets, signpostID: .preload_assets,
                                             "Preloading assets failed")
                             }
                         })
@@ -562,7 +548,7 @@ class GameViewController: UIViewController {
             fatalError("gameManager not initialized")
         }
         
-        log.info("Setting up level")
+        os_log(.info, "Setting up level")
         
         if gameBoard.anchor == nil {
             let boardSize = CGSize(width: CGFloat(gameBoard.scale.x), height: CGFloat(gameBoard.scale.x * gameBoard.aspectRatio))
@@ -571,7 +557,7 @@ class GameViewController: UIViewController {
         }
         gameBoard.hideBorder()
 
-        os_signpost(type: .begin, log: .setup_level, name: .setup_level, signpostID: .setup_level,
+        os_signpost(.begin, log: .setup_level, name: .setup_level, signpostID: .setup_level,
                     "Setting up Level")
 
         sessionState = .gameInProgress
@@ -579,10 +565,11 @@ class GameViewController: UIViewController {
         GameTime.setLevelStartTime()
         gameManager.start()
         gameManager.addLevel(to: renderRoot, gameBoard: gameBoard)
+        gameManager.restWorld()
 
         if !UserDefaults.standard.disableInGameUI {
-            teamACatapultImages.forEach { $0.isHidden = false }
             teamBCatapultImages.forEach { $0.isHidden = false }
+            teamACatapultImages.forEach { $0.isHidden = false }
         }
 
         // stop ranging for beacons after placing board
@@ -593,26 +580,26 @@ class GameViewController: UIViewController {
             }
         }
 
-        os_signpost(type: .end, log: .setup_level, name: .setup_level, signpostID: .setup_level,
+        os_signpost(.end, log: .setup_level, name: .setup_level, signpostID: .setup_level,
                     "Finished Setting Up Level")
     }
 
     func sendWorldTo(peer: Player) {
-        guard let gameManager = gameManager, gameManager.isServer else { log.error("i'm not the server"); return }
+        guard let gameManager = gameManager, gameManager.isServer else { os_log(.error, "i'm not the server"); return }
 
         switch UserDefaults.standard.boardLocatingMode {
         case .worldMap:
-            log.info("generating worldmap for \(peer)")
+            os_log(.info, "generating worldmap for %s", "\(peer)")
             getCurrentWorldMapData { data, error in
                 if let error = error {
-                    log.error("didn't work! \(error)")
+                    os_log(.error, "didn't work! %s", "\(error)")
                     return
                 }
-                guard let data = data else { log.error("no data!"); return }
-                log.info("got a compressed map, sending to \(peer)")
+                guard let data = data else { os_log(.error, "no data!"); return }
+                os_log(.info, "got a compressed map, sending to %s", "\(peer)")
                 let location = GameBoardLocation.worldMapData(data)
                 DispatchQueue.main.async {
-                    log.info("sending worldmap to \(peer)")
+                    os_log(.info, "sending worldmap to %s", "\(peer)")
                     gameManager.send(boardAction: .boardLocation(location), to: peer)
                 }
             }
@@ -622,16 +609,16 @@ class GameViewController: UIViewController {
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        log.info("segue!")
+        os_log(.info, "segue!")
         guard let segueIdentifier = segue.identifier,
             let segueType = GameSegue(rawValue: segueIdentifier) else {
-                log.error("unknown segue \(String(describing: segue.identifier))")
+                os_log(.error, "unknown segue %s", String(describing: segue.identifier))
                 return
         }
         
         switch segueType {
         case .embeddedOverlay:
-            guard let overlayVC = segue.destination as? OverlayViewController else { return }
+            guard let overlayVC = segue.destination as? GameStartViewController else { return }
             overlayVC.delegate = self
             musicCoordinator.playMusic(name: "music_menu", fadeIn: 0.0)
         default:
@@ -683,9 +670,9 @@ extension GameViewController: SCNSceneRendererDelegate {
     // https://developer.apple.com/documentation/scenekit/scnscenerendererdelegate
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
-        os_signpost(type: .begin, log: .render_loop, name: .render_loop, signpostID: .render_loop,
+        os_signpost(.begin, log: .render_loop, name: .render_loop, signpostID: .render_loop,
                     "Render loop started")
-        os_signpost(type: .begin, log: .render_loop, name: .logic_update, signpostID: .render_loop,
+        os_signpost(.begin, log: .render_loop, name: .logic_update, signpostID: .render_loop,
                     "Game logic update started")
         
         if let gameManager = self.gameManager, gameManager.isInitialized {
@@ -697,15 +684,12 @@ extension GameViewController: SCNSceneRendererDelegate {
                 gameManager.copySimulationCamera()
                 
                 // these can use the pointOfView since the render thread scales/unscales the camera around rendering
-                let camPosition = gameManager.renderSpacePositionToSimulationSpace(pos: pointOfView.simdWorldPosition)
-                let camDirection = normalize(gameManager.renderSpaceDirectionToSimulationSpace(dir: pointOfView.simdWorldFront))
-                let cameraRay = Ray(position: camPosition, direction: camDirection)
                 let cameraTransform = gameManager.renderSpaceTransformToSimulationSpace(transform: pointOfView.simdTransform)
-                let cameraInfo = CameraInfo(transform: cameraTransform, ray: cameraRay)
+                let cameraInfo = CameraInfo(transform: cameraTransform)
                 
                 gameManager.updateCamera(cameraInfo: cameraInfo)
                 
-                let canGrabCatapult = gameManager.canGrabACatapult(cameraRay: cameraRay)
+                let canGrabCatapult = gameManager.canGrabACatapult(cameraRay: cameraInfo.ray)
                 let isGrabbingCatapult = gameManager.isCurrentPlayerGrabbingACatapult()
                 
                 DispatchQueue.main.async {
@@ -728,21 +712,14 @@ extension GameViewController: SCNSceneRendererDelegate {
             }
 
             gameManager.update(timeDelta: GameTime.deltaTime)
-            
-            DispatchQueue.main.async {
-                if self.sessionState == .gameInProgress {
-                    self.teamADisabledCatapultCount = gameManager.teamANumCatapultsDisabled
-                    self.teamBDisabledCatapultCount = gameManager.teamBNumCatapultsDisabled
-                }
-            }
         }
 
-        os_signpost(type: .end, log: .render_loop, name: .logic_update, signpostID: .render_loop,
+        os_signpost(.end, log: .render_loop, name: .logic_update, signpostID: .render_loop,
                     "Game logic update finished")
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didApplyConstraintsAtTime time: TimeInterval) {
-        os_signpost(type: .begin, log: .render_loop, name: .post_constraints_update, signpostID: .render_loop,
+        os_signpost(.begin, log: .render_loop, name: .post_constraints_update, signpostID: .render_loop,
                     "Post constraints update started")
         if let gameManager = gameManager, gameManager.isInitialized {
             // scale up/down the camera to render space
@@ -760,12 +737,12 @@ extension GameViewController: SCNSceneRendererDelegate {
             }
         }
 
-       os_signpost(type: .end, log: .render_loop, name: .post_constraints_update, signpostID: .render_loop,
+       os_signpost(.end, log: .render_loop, name: .post_constraints_update, signpostID: .render_loop,
                    "Post constraints update finished")
     }
 
     func renderer(_ renderer: SCNSceneRenderer, willRenderScene scene: SCNScene, atTime time: TimeInterval) {
-        os_signpost(type: .begin, log: .render_loop, name: .render_scene, signpostID: .render_loop,
+        os_signpost(.begin, log: .render_loop, name: .render_scene, signpostID: .render_loop,
                     "Rendering scene started")
     }
 
@@ -782,9 +759,9 @@ extension GameViewController: SCNSceneRendererDelegate {
             gameManager.scaleCameraToSimulation()
         }
 
-        os_signpost(type: .end, log: .render_loop, name: .render_scene, signpostID: .render_loop,
+        os_signpost(.end, log: .render_loop, name: .render_scene, signpostID: .render_loop,
                     "Rendering scene finished")
-        os_signpost(type: .end, log: .render_loop, name: .render_loop, signpostID: .render_loop,
+        os_signpost(.end, log: .render_loop, name: .render_loop, signpostID: .render_loop,
                     "Render loop finished")
     }
     
@@ -848,7 +825,7 @@ extension GameViewController: GameManagerDelegate {
         // connected client.
         if musicCoordinator.currentMusicPlayer?.name == "music_gameplay" {
             let musicTime = musicCoordinator.currentMusicTime()
-            log.debug("music play position = \(musicTime)")
+            os_log(.debug, "music play position = %f", musicTime)
             if musicTime >= 0 {
                 manager.startGameMusic(for: player)
             }
@@ -890,11 +867,20 @@ extension GameViewController: GameManagerDelegate {
             }
         }
     }
+
+    func manager(_ manager: GameManager, updated gameState: GameState) {
+        DispatchQueue.main.async {
+            if self.sessionState == .gameInProgress {
+                self.teamACatapultCount = gameState.teamACatapults
+                self.teamBCatapultCountTemp = gameState.teamBCatapults
+            }
+        }
+    }
 }
 
-// MARK: - OverlayViewControllerDelegate
-extension GameViewController: OverlayViewControllerDelegate {
-    private func createGameManager(for session: GameSession?) {
+// MARK: - GameStartViewControllerDelegate
+extension GameViewController: GameStartViewControllerDelegate {
+    private func createGameManager(for session: NetworkSession?) {
         let level = UserDefaults.standard.selectedLevel
         selectedLevel = level
         gameManager = GameManager(sceneView: sceneView,
@@ -904,21 +890,21 @@ extension GameViewController: OverlayViewControllerDelegate {
                                   musicCoordinator: musicCoordinator)
     }
     
-    func overlayViewControllerSelectedSettings(_ overlayViewController: UIViewController) {
+    func gameStartViewControllerSelectedSettings(_ _: UIViewController) {
         performSegue(withIdentifier: GameSegue.showSettings.rawValue, sender: self)
     }
 
-    func overlayViewController(_ overlayViewController: UIViewController, didPressStartSoloGameButton: UIButton) {
+    func gameStartViewController(_ _: UIViewController, didPressStartSoloGameButton: UIButton) {
         hideOverlay()
         createGameManager(for: nil)
     }
     
-    func overlayViewController(_ overlayViewController: UIViewController, didStart game: GameSession) {
+    func gameStartViewController(_ _: UIViewController, didStart game: NetworkSession) {
         hideOverlay()
         createGameManager(for: game)
     }
     
-    func overlayViewController(_ overlayViewController: UIViewController, didSelect game: GameSession) {
+    func gameStartViewController(_ _: UIViewController, didSelect game: NetworkSession) {
         hideOverlay()
         createGameManager(for: game)
     }
