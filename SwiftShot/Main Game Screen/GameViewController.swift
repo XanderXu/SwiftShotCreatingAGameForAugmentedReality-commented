@@ -92,6 +92,7 @@ class GameViewController: UIViewController {
             guard oldValue != teamACatapultCount else { return }
 
             // The "highlighted" state actually means that the catapult has been disabled.
+            // "highlighted"状态,实际上意味着该弹弓已经不可用了.
             for (index, catapultImage) in teamACatapultImages.enumerated() {
                 let shouldAppear = index < teamACatapultCount
                 catapultImage.isHighlighted = !shouldAppear
@@ -104,6 +105,7 @@ class GameViewController: UIViewController {
             guard oldValue != teamBCatapultCountTemp else { return }
 
             // The "highlighted" state actually means that the catapult has been disabled.
+            // "highlighted"状态,实际上意味着该弹弓已经不可用了.
             for (index, catapultImage) in teamBCatapultImages.enumerated() {
                 let shouldAppear = index < teamBCatapultCountTemp
                 catapultImage.isHighlighted = !shouldAppear
@@ -154,11 +156,13 @@ class GameViewController: UIViewController {
     }
 
     // used when state is localizingToWorldMap or localizingToSavedMap
+    // 当状态是localizingToWorldMap or localizingToSavedMap 时用到
     var targetWorldMap: ARWorldMap?
 
     var gameBoard = GameBoard()
     
     // Root node of the level
+    // 根节点
     var renderRoot = SCNNode()
     
     var panOffset = float3()
@@ -178,6 +182,7 @@ class GameViewController: UIViewController {
     }
 
     // Proximity manager for beacons
+    // beacons的接近管理器
     let proximityManager = ProximityManager.shared
 
     var canAdjustBoard: Bool {
