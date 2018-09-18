@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Custom anchor for saving the board location in an ARWorldMap.
+自定义锚点，用于保存底座位置
 */
 
 import ARKit
@@ -25,6 +26,7 @@ class BoardAnchor: ARAnchor {
     }
 
     // this is guaranteed to be called with something of the same class
+    // 确保该类及子类会调用这个方法
     required init(anchor: ARAnchor) {
         let other = anchor as! BoardAnchor
         self.size = other.size

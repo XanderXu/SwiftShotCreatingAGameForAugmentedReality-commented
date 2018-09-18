@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Gesture interaction methods for the Game Scene View Controller.
+手势交互方法
 */
 
 import UIKit

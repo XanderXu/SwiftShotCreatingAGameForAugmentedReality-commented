@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Custom anchor for saving camera screenshots in an ARWorldMap.
+自定义锚点，用于保存相机截屏
 */
 
 import ARKit
@@ -33,6 +34,7 @@ class KeyPositionAnchor: ARAnchor {
     }
 
     // this is guaranteed to be called with something of the same class
+    // 确保该类及子类会调用这个方法
     required init(anchor: ARAnchor) {
         let other = anchor as! KeyPositionAnchor
         self.image = other.image

@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Maps saving and loading methods for the Game Scene View Controller.
+地图保存与加载
 */
 
 import UIKit
@@ -56,6 +57,7 @@ extension GameViewController {
     
     @IBAction func saveKeyPositionPressed(_ sender: Any) {
         // Save the current position as an ARAnchor and store it in the worldmap for later use when re-localizing to guide users
+        // 保存当前位置作为一个 ARAnchor 并将其储存到世界地图中，以便以后在重新本地化时指导用户
         var image: UIImage?
         var pose: float4x4?
         var mappingStatus: ARFrame.WorldMappingStatus = .notAvailable
@@ -67,6 +69,7 @@ extension GameViewController {
         }
         
         // Add key position anchor to the scene
+        // 向场景中添加关键位置锚点
         if pose != nil && image != nil {
             let newKeyPosition = KeyPositionAnchor(image: image!, transform: pose!, mappingStatus: mappingStatus)
             sceneView.session.add(anchor: newKeyPosition)
@@ -79,11 +82,13 @@ extension GameViewController {
         }
         
         // Get the key position anchors from the current world map
+        // 从当前世界地图中拿到关键位置锚点
         guard let keyPositionAnchors = targetWorldMap?.keyPositionAnchors else {
             return
         }
         
         // Get the current key position anchor displayed
+        // 拿到显示出的当前关键位置锚点
         guard let currentKeyPositionAnchor = keyPositionAnchors.first(where: { $0.image == image }) else {
             return
         }
@@ -101,11 +106,13 @@ extension GameViewController {
         }
         
         // Get the key position anchors from the current world map
+        // 从当前世界地图中拿到关键位置锚点
         guard let keyPositionAnchors = targetWorldMap?.keyPositionAnchors else {
             return
         }
         
         // Get the current key position anchor displayed
+        // 拿到显示出的当前关键位置锚点
         guard let currentKeyPositionAnchor = keyPositionAnchors.first(where: { $0.image == image }) else {
             return
         }
@@ -138,6 +145,7 @@ extension GameViewController {
     
     func updateMappingStatus(_ mappingStatus: ARFrame.WorldMappingStatus) {
         // Check the mapping status of the worldmap to be able to save the worldmap when in a good state
+        // 检查世界地图的构建状态，完成时可以保存世界地图
         switch mappingStatus {
         case .notAvailable:
             mappingStateLabel.text = "Mapping state: Not Available"
@@ -165,6 +173,7 @@ extension GameViewController {
     func getCurrentWorldMapData(_ closure: @escaping (Data?, Error?) -> Void) {
         os_log(.info, "in getCurrentWordMapData")
         // When loading a map, send the loaded map and not the current extended map
+        // 当正在加载地图时，发送已加载的地图，而不是当前扩展过的地图
         if let targetWorldMap = targetWorldMap {
             os_log(.info, "using existing worldmap, not asking session for a new one.")
             compressMap(map: targetWorldMap, closure)
@@ -243,6 +252,7 @@ extension GameViewController {
     }
     
     /// Get the archived data from a URL Path
+    /// 从一个 URL 路径拿到压缩过的数据
     private func fetchArchivedWorldMap(from url: URL, _ closure: @escaping (Data?, Error?) -> Void) {
         DispatchQueue.global().async {
             do {
