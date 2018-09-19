@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Responsible for tracking the state of the game: which objects are where, who's in the game, etc.
+负责跟踪游戏状态：哪些物体在哪里，谁在游戏中等等。
 */
 
 import Foundation
@@ -41,17 +42,20 @@ protocol GameManagerDelegate: class {
 class GameManager: NSObject {
     
     // actions coming from the main thread/UI layer
+    // 来自主线程/ UI层的动作
     struct TouchEvent {
         var type: TouchType
         var camera: Ray
     }
     
     // interactions with the scene must be on the main thread
+    // 与场景的交互必须在主线程上
     let level: GameLevel
     private let scene: SCNScene
     private let levelNode: SCNNode
     
     // use this to access the simulation scaled camera
+    // 用它来访问模拟出的缩放过的相机
     private(set) var pointOfViewSimulation: SCNNode
 
     // these come from ARSCNView currentlys
@@ -62,12 +66,14 @@ class GameManager: NSObject {
     private var tableBoxObject: GameObject?
     
     // should be the inverse of the level's world transform
+    // 应该是关卡世界变换的逆矩阵
     private var renderToSimulationTransform = float4x4.identity {
         didSet {
             sfxCoordinator.renderToSimulationTransform = renderToSimulationTransform
         }
     }
     // don't execute any code from SCNView renderer until this is true
+    // 当此项为 true 时再执行渲染器的代码
     private(set) var isInitialized = false
 
     // progress of the game
@@ -90,9 +96,10 @@ class GameManager: NSObject {
     private var touchEvents = [TouchEvent]()
     private let touchEventsLock = NSLock()
 
-    private var categories = [String: [GameObject]] ()  // this object can be used to group like items if their gamedefs include a category
+    private var categories = [String: [GameObject]] ()  // this object can be used to group like items if their gamedefs include a category 根据类别分组
 
     // Refernces to Metal do not compile for the Simulator
+    // 模拟器上不会编译Metal的引用
 #if !targetEnvironment(simulator)
     private var flagSimulation: MetalClothSimulator
 #endif
@@ -112,6 +119,7 @@ class GameManager: NSObject {
          audioEnvironment: AVAudioEnvironmentNode, musicCoordinator: MusicCoordinator) {
         
         // make our own scene instead of using the incoming one
+        // 制作我们自己的场景，而不是使用传入的场景
         self.scene = sceneView.scene!
         self.physicsWorld = scene.physicsWorld
         physicsWorld.gravity = SCNVector3(0.0, -10, 0)
@@ -121,6 +129,7 @@ class GameManager: NSObject {
 #endif
         
         // this is a node, that isn't attached to the ARSCNView
+        // 该节点并没有添加到ARSCNView上
         self.pointOfView = sceneView.pointOfView!
         self.pointOfViewSimulation = pointOfView.clone()
         
@@ -138,6 +147,7 @@ class GameManager: NSObject {
         level.load()
 
         // start with a copy of the level, never change the originals, since we use original to reset
+        // 启动时复制关卡，不要改变原点，因为我们需要用原点来重置
         self.levelNode = level.activeLevel!
 
         self.isNetworked = session != nil
@@ -183,6 +193,7 @@ class GameManager: NSObject {
     func updateCamera(cameraInfo: CameraInfo) {
         if gameCamera == nil {
             // need the real render camera in order to set rendering state
+            // 需要真正的渲染相机才能设置渲染状态
             let camera = pointOfView
             camera.name = "GameCamera"
             gameCamera = GameCamera(camera)
