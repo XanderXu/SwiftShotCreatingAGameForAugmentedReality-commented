@@ -3,18 +3,21 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 View controller for development & debugging settings.
+开发&调试
 */
 
 import UIKit
 
 class DeveloperSettingsTableViewController: UITableViewController {
     // misc
+    // 音乐
     @IBOutlet weak var antialiasingMode: UISwitch!
     @IBOutlet weak var gameRoomModeSwitch: UISwitch! // called Look for Beacons in UI
     @IBOutlet weak var useAutofocusSwitch: UISwitch!
     @IBOutlet weak var allowGameBoardAutoSizeSwitch: UISwitch!
     
     // level controls
+    // 关卡控制
     @IBOutlet weak var showResetLeverSwitch: UISwitch!
     @IBOutlet weak var showFlags: UISwitch!
     @IBOutlet weak var showClouds: UISwitch!
@@ -22,6 +25,7 @@ class DeveloperSettingsTableViewController: UITableViewController {
     @IBOutlet weak var showLOD: UISwitch!
 
     // UI Settings
+    // UI 设置
     @IBOutlet weak var disableInGameUISwitch: UISwitch!
     @IBOutlet weak var showARDebugSwitch: UISwitch!
     @IBOutlet weak var showRenderStatsSwitch: UISwitch!
@@ -37,10 +41,12 @@ class DeveloperSettingsTableViewController: UITableViewController {
     var uiSwitches = [UISwitch]()
 
     // world map sharing
+    // 世界地图共享
     @IBOutlet weak var worldMapCell: UITableViewCell!
     @IBOutlet weak var manualCell: UITableViewCell!
 
     // projectile trail
+    // 弹丸踪迹
     @IBOutlet weak var showProjectileTrailSwitch: UISwitch!
     @IBOutlet weak var useCustomTrailSwitch: UISwitch!
     @IBOutlet weak var taperTrailSwitch: UISwitch!
@@ -59,7 +65,8 @@ class DeveloperSettingsTableViewController: UITableViewController {
             object: nil)
 
         antialiasingMode.isOn = defaults.antialiasingMode
-        // if user turns of location permissions in settings after enabling them, we should turn off gameRoomMode
+        // if user turns off location permissions in settings after enabling them, we should turn off gameRoomMode
+        // 如果用户在授权定位后又到设置里关闭了定位权限，我们也应该关闭gameRoomMode
         if !proximityManager.isAuthorized {
             defaults.gameRoomMode = false
         }
@@ -74,6 +81,7 @@ class DeveloperSettingsTableViewController: UITableViewController {
         showRopeSimulation.isOn = defaults.showRopeSimulation
         
         // happens here so the switches have been loaded from the storyboard
+        // 开关已经从storyboard加载
         uiSwitches = [showARDebugSwitch, showRenderStatsSwitch, showTrackingStateSwitch,
                       showWireframe, showLOD,
                       showPhysicsDebugSwitch, showSettingsSwitch, showARRelocalizationHelp,
@@ -86,6 +94,7 @@ class DeveloperSettingsTableViewController: UITableViewController {
     @objc
     func appplicationDidBecomeActive(notification: NSNotification ) {
         // check for permission changes after becoming active again
+        // 进入前台活跃状态后，再次检查权限
         if !proximityManager.isAuthorized {
             defaults.gameRoomMode = false
         }
@@ -169,6 +178,7 @@ class DeveloperSettingsTableViewController: UITableViewController {
         defaults.gameRoomMode = sender.isOn
         if !proximityManager.isAuthorized && sender.isOn {
             // if trying to enable beacons without location permissions, display alert
+            // 如果无定位权限时，试图启动beacons则显示弹窗
             let alertController = UIAlertController(title:
                 NSLocalizedString("Insufficient Location Permissions For Beacons", comment: "User didn't enable location services"),
                                                     message:
@@ -215,6 +225,7 @@ class DeveloperSettingsTableViewController: UITableViewController {
         defaults.disableInGameUI = sender.isOn
         if sender.isOn {
             // also turn off everything else
+            // 关闭所有
             defaults.showARDebug = false
             defaults.showPhysicsDebug = false
             defaults.showARDebug = false
@@ -291,7 +302,7 @@ extension DeveloperSettingsTableViewController: UITextFieldDelegate {
 
     private func trailWidthDidEndEditing(reason: UITextField.DidEndEditingReason) {
         if let text = trailWidthTextField.text, let newValue = Float(text) {
-            defaults.trailWidth = newValue // value stored in unit ball size (1.0 as trail width equal to ball size)
+            defaults.trailWidth = newValue // value stored in unit ball size (1.0 as trail width equal to ball size) 值以单位球的尺寸储存（1.0 意味着尾迹等于球的尺寸）
         } else {
             defaults.trailWidth = nil
         }

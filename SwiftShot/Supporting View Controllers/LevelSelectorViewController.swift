@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 View controller for choosing levels.
+选择关卡
 */
 
 import UIKit

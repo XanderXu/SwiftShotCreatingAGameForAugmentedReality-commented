@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 View controller for user settings.
+用户设置
 */
 
 import UIKit

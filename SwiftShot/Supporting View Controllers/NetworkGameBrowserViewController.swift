@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 View controller for finding network games.
+查找网络游戏
 */
 
 import UIKit
@@ -15,6 +16,7 @@ class NetworkGameBrowserViewController: UIViewController {
     var session: NetworkSession?
 
     // must be set by parent
+    // 必须由父控制器设置
     var browser: GameBrowser? {
         didSet {
             oldValue?.stop()
@@ -22,6 +24,7 @@ class NetworkGameBrowserViewController: UIViewController {
     }
     
     // must be set by parent
+    // 必须由父控制器设置
     var proximityManager: ProximityManager?
     
     override func viewDidLoad() {

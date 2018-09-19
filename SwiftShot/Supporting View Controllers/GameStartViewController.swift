@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 View controller for in-game 2D overlay UI.
+显示 2D 漂浮 UI。
 */
 
 import UIKit
