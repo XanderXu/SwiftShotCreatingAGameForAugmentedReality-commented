@@ -202,6 +202,7 @@ class GameManager: NSObject {
             gameCamera?.updateProps()
         }
         // transfer props to the current camera
+        // 迁移属性到当前相机上
         gameCamera?.transferProps()
 
         interactionManager.updateAll(cameraInfo: cameraInfo)
@@ -226,6 +227,7 @@ class GameManager: NSObject {
             }
         case .startGameMusic(let timeData):
             // Start music at the correct place.
+            // 在正确的地方开始播放音乐
             if let player = command.player {
                 handleStartGameMusic(timeData, from: player)
             }
@@ -236,6 +238,7 @@ class GameManager: NSObject {
     
     // MARK: update
     // Called from rendering loop once per frame
+    // 渲染循环每帧调用
     /// - Tag: GameManager-update
     func update(timeDelta: TimeInterval) {
         processCommandQueue()
@@ -256,13 +259,16 @@ class GameManager: NSObject {
     let maxCatapults = 6
     
     // keep track of which catapults we can see as candidates for grabbing/highlighting
+    // 追踪哪个弹弓可用
     func updateCatapultVisibility(renderer: SCNSceneRenderer, camera: SCNNode) {
         catapultsLock.lock(); defer { catapultsLock.unlock() }
         guard !catapults.isEmpty && catapults.count == maxCatapults else { return }
         
         // track which are visible
+        // 追踪哪个是可见的
         for catapult in catapults {
             // projectile part should be available, otherwise this is not highlightable
+            // 弹丸部分可用，否则不应该高亮显示
             guard let projectile = catapult.projectile, var visGeo = projectile.findNodeWithGeometry() else {
                 catapult.isVisible = false
                 continue
