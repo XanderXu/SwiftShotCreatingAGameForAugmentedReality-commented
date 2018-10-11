@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Modulates slingshot SFX audio based on player interaction.
+根据玩家互动调制弹弓SFX音频。
 */
 
 import UIKit

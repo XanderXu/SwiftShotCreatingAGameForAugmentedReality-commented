@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Top-level container for physics data sync between peers.
+用于物理数据同步的顶级容器。
 */
 
 import Foundation

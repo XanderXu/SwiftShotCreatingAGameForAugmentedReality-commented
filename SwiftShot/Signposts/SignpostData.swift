@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Performance debugging markers for use with os_signpost.
+用于os_signpost的性能调试标记。
 */
 
 import os.signpost

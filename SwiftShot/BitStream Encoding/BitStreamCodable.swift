@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Protocols for defining types that can encode to bit streams.
+协议，用于定义可编码为比特流的类型。
 */
 
 import Foundation

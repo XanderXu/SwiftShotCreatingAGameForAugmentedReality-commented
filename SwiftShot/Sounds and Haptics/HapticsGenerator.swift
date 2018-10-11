@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages haptic effects coordinated with sound and gameplay.
+管理与声音和游戏玩法相应的触觉效果（震动效果）。
 */
 
 import UIKit

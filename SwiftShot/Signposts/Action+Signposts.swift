@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Performance debugging markers for GameAction.
+GameAction的性能调试标记。
 */
 
 import Foundation

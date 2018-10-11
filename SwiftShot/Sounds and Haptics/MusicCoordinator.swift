@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages playback and volume of music.
+管理音乐的播放和音量。
 */
 
 import AVFoundation

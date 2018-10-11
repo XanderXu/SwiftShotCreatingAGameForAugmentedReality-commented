@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Simple wrapper for UI audio effects.
+用于UI音频效果的简单包装器。
 */
 
 import AVFoundation

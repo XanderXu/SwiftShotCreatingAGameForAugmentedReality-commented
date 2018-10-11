@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Container for scene-level physics sync data.
+用于场景级物理同步数据的容器。
 */
 
 import Foundation

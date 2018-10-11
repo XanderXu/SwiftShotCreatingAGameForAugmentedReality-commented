@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Modulates audio SFX for ball/block/table collisions based on physics parameters.
+根据物理参数调制音频SFX，用于小球/木块/桌子的碰撞。
 */
 
 import UIKit

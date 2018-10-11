@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Synchronization for node-specific physics data.
+特定节点物理数据的同步。
 */
 
 import Foundation

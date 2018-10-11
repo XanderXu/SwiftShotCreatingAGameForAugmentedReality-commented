@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages playback of sound effects.
+管理音效的播放。
 */
 
 import SceneKit

@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Synchronization for sound-related physics data.
+声音相关物理数据的同步。
 */
 
 import Foundation

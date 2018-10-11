@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Convenience wrapper for using MIDI to modulate SFX audio.
+使用MIDI调制SFX音频的便捷包装器。
 */
 
 import AVFoundation

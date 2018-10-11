@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Utilities for compact serialization of data structures for network transmission.
+用于网络传输的，数据结构紧凑序列化的工具类。
 */
 
 import Foundation
