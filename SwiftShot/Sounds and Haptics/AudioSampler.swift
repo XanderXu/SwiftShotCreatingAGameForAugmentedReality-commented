@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Superclass for audio SFX modulated by gameplay.
+通过gameplay调制音频SFX的超类。
 */
 
 import UIKit

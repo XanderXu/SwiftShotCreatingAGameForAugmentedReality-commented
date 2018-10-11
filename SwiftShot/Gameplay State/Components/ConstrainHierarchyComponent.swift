@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Connects nodes loaded from separate resources with physics joints based on node names.
+根据节点名称，用物理关节连接从单独资源加载出的节点。
 */
 
 import Foundation

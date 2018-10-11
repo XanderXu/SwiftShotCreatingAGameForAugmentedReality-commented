@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Entity class for game objects with customizable components.
+具有可自定义组件的游戏对象的实体类。
 */
 
 import Foundation

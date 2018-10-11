@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 User interaction for the grabbing any grabbable object.
+抓取任何可抓取对象的用户交互。
 */
 
 import Foundation

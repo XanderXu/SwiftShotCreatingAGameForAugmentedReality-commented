@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 iBeacon implementation for setting up at WWDC game room tables.
+用于在WWDC游戏室桌面设置的iBeacon实现。
 */
 
 import Foundation

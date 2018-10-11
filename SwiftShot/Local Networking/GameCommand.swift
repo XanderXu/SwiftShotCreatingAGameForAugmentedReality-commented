@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Representations for game events, related data, and their encoding.
+游戏事件，相关数据及其编码的表示。
 */
 
 import Foundation

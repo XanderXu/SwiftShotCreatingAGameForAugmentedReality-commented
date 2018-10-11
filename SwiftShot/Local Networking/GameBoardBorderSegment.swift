@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Corner segments for the game board's border UI.
+游戏底座边框 UI 的拐角段。
 */
 
 import SceneKit

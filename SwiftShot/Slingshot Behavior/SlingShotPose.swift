@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Defines the pose of a slingshot rope at a given time.
+定义在给定时间弹弓绳索的姿态。
 */
 
 import simd

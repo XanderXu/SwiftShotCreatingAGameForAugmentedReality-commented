@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Draws a motion trail behind the ball.
+画出弹丸后面的尾迹。
 */
 
 import Foundation

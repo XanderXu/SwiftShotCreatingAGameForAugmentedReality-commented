@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Check and display victory special effect to end the game.
+检查并显示胜利特效以结束游戏。
 */
 
 import Foundation

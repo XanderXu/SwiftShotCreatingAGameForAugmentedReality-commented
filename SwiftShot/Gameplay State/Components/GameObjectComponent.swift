@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Protocols for GKComponents that require or provide certain behaviors.
+需要或提供某些特定行为的GKComponents协议。
 */
 
 import Foundation

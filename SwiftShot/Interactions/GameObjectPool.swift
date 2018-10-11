@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Projectile reuse to support multiplayer physics sync.
+弹丸重用以支持多人物理同步。
 */
 
 import Foundation

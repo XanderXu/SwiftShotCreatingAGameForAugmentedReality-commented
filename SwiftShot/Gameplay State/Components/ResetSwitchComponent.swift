@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Behavior for the AR reset switch.
+AR 重置开关的动作。
 */
 
 import Foundation

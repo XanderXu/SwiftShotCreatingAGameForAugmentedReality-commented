@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Removes nodes from the scene when they fall out of bounds.
+当节点超出界限时从场景中删除。
 */
 
 import GameplayKit

@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Wrapper class for lazily computed values for use as properties elsewhere.
+用于延迟计算值的包装类，用作其他地方的属性。
 */
 
 // Using a provided closure the value is computed upon request.

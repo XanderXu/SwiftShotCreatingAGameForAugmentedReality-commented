@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Vortex special effect to end the game.
+游戏结束时的漩涡特效。
 */
 
 import Foundation

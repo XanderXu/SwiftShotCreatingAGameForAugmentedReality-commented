@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Indentifies a player in the game.
+标识游戏中的玩家。
 */
 
 import Foundation

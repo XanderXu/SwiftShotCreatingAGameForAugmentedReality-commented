@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages the simulation for the slingshot rope.
+管理弹弓绳的模拟。
 */
 
 import Foundation

@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Custom projectile selection.
+自定义弹丸选择。
 */
 
 import Foundation

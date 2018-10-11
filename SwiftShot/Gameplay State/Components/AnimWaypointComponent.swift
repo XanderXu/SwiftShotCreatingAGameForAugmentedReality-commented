@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Component that lets an animation move along a predefined path of points in the level
+允许动画沿着关卡中预定义的点路径移动的组件
 */
 
 import Foundation

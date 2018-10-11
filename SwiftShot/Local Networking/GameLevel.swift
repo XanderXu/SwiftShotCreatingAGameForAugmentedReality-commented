@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Wrapper for loading level scenes.
+用于加载关卡场景的包装器。
 */
 
 import Foundation

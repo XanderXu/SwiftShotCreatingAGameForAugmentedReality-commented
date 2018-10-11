@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages interactions for the slingshot.
+管理弹弓的交互。
 */
 
 import SceneKit

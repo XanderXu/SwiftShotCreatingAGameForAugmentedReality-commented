@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Smooths correction of physics state from network sync vs local simulation.
+平滑校正物理状态：网络同步与本地模拟。
 */
 
 import Foundation

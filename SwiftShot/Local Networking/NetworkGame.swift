@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Identifies a networked game session.
+标识联网的游戏会话。
 */
 
 import Foundation

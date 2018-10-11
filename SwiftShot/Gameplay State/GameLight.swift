@@ -3,7 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Tunes SceneKit lighting/shadows using the entity definitions file.
- 使用entity定义文件调整SceneKit摄像机光照/阴影
+ 使用entity定义文件调整SceneKit摄像机光照/阴影。
 */
 
 import Foundation

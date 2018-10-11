@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages how catapults gets disabled
+管理弹射器如何被禁用
 */
 
 import Foundation

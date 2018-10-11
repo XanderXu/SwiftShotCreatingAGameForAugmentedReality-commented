@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages toggling physics behavior and user interaction for the slingshot.
+管理切换弹弓的物理行为和用户交互。
 */
 
 import Foundation

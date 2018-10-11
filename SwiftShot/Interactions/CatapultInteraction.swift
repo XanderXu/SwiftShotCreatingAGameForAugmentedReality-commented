@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 User interaction for the slingshot.
+弹弓的用户互动。
 */
 
 import Foundation

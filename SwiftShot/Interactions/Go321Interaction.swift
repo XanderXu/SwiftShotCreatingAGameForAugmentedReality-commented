@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Display "3, 2, 1, Go" in the beginning
+在开始时显示"3, 2, 1, Go"
 */
 
 import Foundation

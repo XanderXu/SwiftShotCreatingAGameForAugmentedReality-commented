@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages user interactions.
+管理用户交互。
 */
 
 import Foundation

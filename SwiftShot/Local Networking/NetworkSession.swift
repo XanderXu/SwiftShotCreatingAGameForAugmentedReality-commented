@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages the multipeer networking for a game.
+管理游戏的多人网络。
 */
 
 import Foundation

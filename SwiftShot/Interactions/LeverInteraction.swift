@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 User interaction for levers and switches.
+杠杆和开关的用户交互。
 */
 
 import Foundation

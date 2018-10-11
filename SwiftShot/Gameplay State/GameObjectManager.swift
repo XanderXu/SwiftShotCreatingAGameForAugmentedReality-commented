@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages objects that need synchronized updating.
+管理需要同步更新的对象。
 */
 
 import Foundation

@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Flag simulation Metal compute wrapper.
+旗帜模拟计算的包装。
 */
 
 // References to Metal do not compile for the Simulator.

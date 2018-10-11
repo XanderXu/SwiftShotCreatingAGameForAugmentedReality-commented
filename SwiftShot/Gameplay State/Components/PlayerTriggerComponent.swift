@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Handles destruction of slingshots when hit by other team's shots.
+当被对方队命中时，处理弹弓的破坏。
 */
 
 import Foundation

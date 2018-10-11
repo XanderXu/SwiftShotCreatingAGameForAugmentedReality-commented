@@ -3,7 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Tunes SceneKit camera setup using the entity definitions file.
-使用entity定义文件调整SceneKit摄像机设置
+使用entity定义文件调整SceneKit摄像机设置。
 */
 
 import Foundation

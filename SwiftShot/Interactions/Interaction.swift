@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Protocols for event interactions.
+事件交互的代理。
 */
 
 import Foundation

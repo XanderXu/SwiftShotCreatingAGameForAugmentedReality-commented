@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Central static class to keep track of game time.
+中央静态类来跟踪游戏时间。
 */
 
 import Foundation

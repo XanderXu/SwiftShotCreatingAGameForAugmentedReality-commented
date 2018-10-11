@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages placement of the game board in real space before starting a game.
+在开始游戏之前管理游戏底座在真实空间中的放置位置。
 */
 
 import Foundation

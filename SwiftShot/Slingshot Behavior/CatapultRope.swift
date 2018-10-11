@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages the slingshot animation.
+管理弹弓的动画。
 */
 
 import simd

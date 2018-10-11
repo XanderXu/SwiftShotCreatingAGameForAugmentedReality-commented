@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A custom pan gesture reconizer that fires only when a threshold is passed.
+自定义平移手势识别器，仅在超过阈值时触发。
 */
 
 import UIKit.UIGestureRecognizerSubclass

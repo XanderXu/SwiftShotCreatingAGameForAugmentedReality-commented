@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Finds games in progress on the local network.
+查找本地网络上正在进行的游戏。
 */
 
 import Foundation

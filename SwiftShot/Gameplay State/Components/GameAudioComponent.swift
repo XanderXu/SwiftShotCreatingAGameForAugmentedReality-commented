@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Component for game objects that play audio.
+用于播放音频的游戏对象的组件。
 */
 
 import Foundation
