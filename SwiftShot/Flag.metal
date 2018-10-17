@@ -128,7 +128,10 @@ float3 ApplyForce(const device float3* positions,
     // 点乘反映着两个向量的“相似度”，两个向量越“相似”，它们的点乘越大。
     
     
-    // 下面是计算力的公式：sf 是布料在 3D 空间变形产生的弹力；sv 是布料点运动速度及方向不同，产生的力；fric 是运动摩擦，这里值取 1；del/invLen 就是变形向量除以长度，即单位长度变形量（变形程度）
+    /* 下面是计算力的公式：sf 是布料在 3D 空间变形产生的弹力；
+    sv 是布料点在当前位移时的运动速度，fric 是运动摩擦系数，这里值取 1，sv * fric 含义是当前已拉伸 deltaP（位移向量） 的情况下，仍然以 deltaV（速度向量）拉伸时，产生的摩擦力是多大；
+    del/invLen 就是变形向量除以长度，即单位长度变形量（变形程度）
+     */
     // Force = -(sf + sv * fric) * del/invLen.
     sf += sv;    // friction = 1
     sf *= invLen;
@@ -164,7 +167,7 @@ kernel void updateVertex(const device float3* inVertices [[ buffer(0) ]],
     // 从 0 的力开始
     float3 force(0,0,0);
     
-    // 累加各个方向的计算出来的力，到 force 上
+    // 累加各个方向的计算出来的力，到 force 上。共 6 个方向，与`updateNormal`方法中的 6 个法线一致
     APPLY_FORCE(x < WIDTH-1,  1, 0, strength);
     APPLY_FORCE(x > 0,       -1, 0, strength);
     
@@ -174,6 +177,7 @@ kernel void updateVertex(const device float3* inVertices [[ buffer(0) ]],
     APPLY_FORCE(x < WIDTH-1 && y < HEIGHT-1,  1,  1, strength);
     APPLY_FORCE(x > 0 && y > 0,              -1, -1, strength);
     
+    // 上下左右额外加强计算
     APPLY_FORCE(x < WIDTH-2,  2, 0, strength2);
     APPLY_FORCE(x > 1      , -2, 0, strength2);
     
@@ -199,7 +203,7 @@ kernel void updateVertex(const device float3* inVertices [[ buffer(0) ]],
         
         // 点乘又叫向量的内积、数量积，是一个向量和它在另一个向量上的投影的长度的乘积；是标量。
         // 点乘反映着两个向量的“相似度”，两个向量越“相似”，它们的点乘越大。
-        float f = dot(relativeWind, n) * 0.25;
+        float f = dot(relativeWind, n) * 0.25;//风对法线的影响程度
         
         force += n*f;
     }
@@ -218,7 +222,7 @@ kernel void updateVertex(const device float3* inVertices [[ buffer(0) ]],
     // 移动旗帜
     float3 v = vel + (force*timestep);//实际速度=原速度+（加速度*时间），force 在这里表示加速度，因为质量是 1，所以加速度===力
     outVelocities[id] = v;
-    outVertices[id] = pos + v*timestep;
+    outVertices[id] = pos + v*timestep;//实际位移=原位移+（速度*时间）
 }
 
 // This function computes the plane normals for the 6 planes touching the
