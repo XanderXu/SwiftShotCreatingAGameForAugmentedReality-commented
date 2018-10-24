@@ -1,3 +1,5 @@
+> 说明:相关解读文章,地址见[这里](https://xiaozhuanlan.com/topic/5609187342) 配合阅读,效果更佳.
+
 # SwiftShot: Creating a Game for Augmented Reality
 
 See how Apple built the featured demo for WWDC18, and get tips for making your own multiplayer games using ARKit, SceneKit, and Swift.
